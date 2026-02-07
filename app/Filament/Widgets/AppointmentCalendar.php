@@ -127,12 +127,10 @@ class AppointmentCalendar extends FullCalendarWidget
 
                     return $data;
                 })
-                ->after(function (array $data, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+                ->after(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
                     $livewire->refreshRecords();
 
-                    $sendWhatsApp = (bool) ($data['send_whatsapp'] ?? false);
-
-                    if ($sendWhatsApp && filled($record->scheduled_at)) {
+                    if (filled($record->scheduled_at)) {
                         $record->update(['whatsapp_sent' => true]);
 
                         $url = $whatsAppService->sendAppointmentConfirmation($record);
