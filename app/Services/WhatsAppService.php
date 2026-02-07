@@ -16,13 +16,25 @@ class WhatsAppService
         }
 
         $dogName = trim((string) ($appointment->dog?->name ?? ''));
-        $date = $appointment->scheduled_at?->format('d/m/Y') ?? '';
-        $time = $appointment->scheduled_at?->format('H:i') ?? '';
+        $scheduledAt = $appointment->scheduled_at?->copy()->timezone(config('app.timezone'));
+        $date = $scheduledAt?->format('d/m/Y') ?? '';
+        $time = $scheduledAt?->format('H:i') ?? '';
+        $whenText = '';
+
+        if ($scheduledAt) {
+            if ($scheduledAt->isToday()) {
+                $whenText = "oggi alle {$time}";
+            } elseif ($scheduledAt->isTomorrow()) {
+                $whenText = "domani alle {$time}";
+            } else {
+                $whenText = "il {$date} alle {$time}";
+            }
+        }
 
         $message = "Ciao {$clientName},\n" .
             "confermiamo l'appuntamento per {$dogName}\n" .
-            "il {$date} alle {$time}.\n" .
-            "ZagaDogs ??";
+            "{$whenText}.\n" .
+            "ZagaDogs";
 
         $phone = preg_replace('/\D+/', '', (string) ($appointment->client?->phone ?? ''));
 

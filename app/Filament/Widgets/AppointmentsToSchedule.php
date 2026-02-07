@@ -62,6 +62,7 @@ class AppointmentsToSchedule extends TableWidget
                     ->form([
                         Forms\Components\DateTimePicker::make('scheduled_at')
                             ->label('Data e ora')
+                            ->minDate(now()->startOfMinute())
                             ->seconds(false)
                             ->required(),
                         Forms\Components\Checkbox::make('send_whatsapp')

@@ -5,10 +5,12 @@ namespace App\Filament\Widgets;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Dog;
+use App\Services\WhatsAppService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Builder;
+use Saade\FilamentFullCalendar\Actions\EditAction;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class AppointmentCalendar extends FullCalendarWidget
@@ -84,6 +86,7 @@ class AppointmentCalendar extends FullCalendarWidget
 
             Forms\Components\DateTimePicker::make('scheduled_at')
                 ->label('Data e ora')
+                ->minDate(now()->startOfMinute())
                 ->seconds(false),
 
             Forms\Components\Textarea::make('notes')
@@ -95,25 +98,43 @@ class AppointmentCalendar extends FullCalendarWidget
     protected function configureAction(Action $action): void
     {
         if (! $action instanceof \Saade\FilamentFullCalendar\Actions\CreateAction) {
+            if (! $action instanceof EditAction) {
+                return;
+            }
+        }
+
+        if ($action instanceof \Saade\FilamentFullCalendar\Actions\CreateAction) {
+            $action
+                ->mountUsing(function (Form $form, array $arguments): void {
+                    $start = $arguments['start'] ?? null;
+
+                    $form->fill([
+                        'scheduled_at' => $start,
+                    ]);
+                })
+                ->mutateFormDataUsing(function (array $data): array {
+                    $hasSchedule = filled($data['scheduled_at'] ?? null);
+
+                    $data['scheduled_at'] = $hasSchedule ? $data['scheduled_at'] : null;
+                    $data['status'] = $hasSchedule ? 'confirmed' : 'pending';
+
+                    return $data;
+                });
+
             return;
         }
 
-        $action
-            ->mountUsing(function (Form $form, array $arguments): void {
-                $start = $arguments['start'] ?? null;
+        $action->extraModalFooterActions([
+            Action::make('whatsapp')
+                ->label('WhatsApp')
+                ->color('success')
+                ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
+                ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+                    $url = $whatsAppService->sendAppointmentConfirmation($record);
 
-                $form->fill([
-                    'scheduled_at' => $start,
-                ]);
-            })
-            ->mutateFormDataUsing(function (array $data): array {
-                $hasSchedule = filled($data['scheduled_at'] ?? null);
-
-                $data['scheduled_at'] = $hasSchedule ? $data['scheduled_at'] : null;
-                $data['status'] = $hasSchedule ? 'confirmed' : 'pending';
-
-                return $data;
-            });
+                    $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                }),
+        ]);
     }
 
     /**
@@ -129,11 +150,64 @@ class AppointmentCalendar extends FullCalendarWidget
             ->map(function (Appointment $appointment) {
                 return [
                     'id'    => $appointment->id,
-                    'title' => $appointment->client->last_name . ' - ' . $appointment->dog->name,
+                    'title' => $appointment->dog->name,
                     'start' => $appointment->scheduled_at->toIso8601String(),
                 ];
             })
             ->toArray();
+    }
+
+    public function eventClassNames(): string
+    {
+        return <<<'JS'
+            function() {
+                return ['zaga-event'];
+            }
+        JS;
+    }
+
+    public function eventContent(): string
+    {
+        return <<<'JS'
+            function(arg) {
+                const title = arg.event.title || '';
+                const time = arg.timeText ? `<div style="font-size:11px;opacity:.9;">${arg.timeText}</div>` : '';
+
+                return {
+                    html: `<div style="line-height:1.1;">
+                        <div style="font-weight:600;">${title}</div>
+                        ${time}
+                    </div>`,
+                };
+            }
+        JS;
+    }
+
+    public function eventDidMount(): string
+    {
+        return <<<'JS'
+            function(info) {
+                const el = info.el;
+                el.style.backgroundColor = '#16a34a';
+                el.style.borderColor = '#15803d';
+                el.style.color = '#ffffff';
+                el.style.borderRadius = '8px';
+                el.style.padding = '2px 6px';
+                el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.2)';
+            }
+        JS;
+    }
+
+    public function onEventClick(array $event): void
+    {
+        if ($this->getModel()) {
+            $this->record = $this->resolveRecord($event['id']);
+        }
+
+        $this->mountAction('edit', [
+            'type' => 'click',
+            'event' => $event,
+        ]);
     }
 
     public function refreshRecords(): void

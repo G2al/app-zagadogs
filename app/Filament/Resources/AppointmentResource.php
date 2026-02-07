@@ -45,6 +45,7 @@ class AppointmentResource extends Resource
 
                 Forms\Components\DateTimePicker::make('scheduled_at')
                     ->label('Data e ora')
+                    ->minDate(now()->startOfMinute())
                     ->seconds(false),
 
                 Forms\Components\Textarea::make('notes')
