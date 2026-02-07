@@ -87,7 +87,14 @@ class AppointmentCalendar extends FullCalendarWidget
             Forms\Components\DateTimePicker::make('scheduled_at')
                 ->label('Data e ora')
                 ->minDate(now()->startOfMinute())
-                ->seconds(false),
+                ->seconds(false)
+                ->reactive(),
+
+            Forms\Components\Checkbox::make('send_whatsapp')
+                ->label('Invia conferma WhatsApp')
+                ->accepted(fn (string $operation, callable $get) => $operation === 'create' && filled($get('scheduled_at')))
+                ->required(fn (string $operation, callable $get) => $operation === 'create' && filled($get('scheduled_at')))
+                ->visible(fn (string $operation, callable $get) => $operation === 'create' && filled($get('scheduled_at'))),
 
             Forms\Components\Textarea::make('notes')
                 ->label('Note')
@@ -119,6 +126,19 @@ class AppointmentCalendar extends FullCalendarWidget
                     $data['status'] = $hasSchedule ? 'confirmed' : 'pending';
 
                     return $data;
+                })
+                ->after(function (array $data, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+                    $livewire->refreshRecords();
+
+                    $sendWhatsApp = (bool) ($data['send_whatsapp'] ?? false);
+
+                    if ($sendWhatsApp && filled($record->scheduled_at)) {
+                        $record->update(['whatsapp_sent' => true]);
+
+                        $url = $whatsAppService->sendAppointmentConfirmation($record);
+
+                        $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                    }
                 });
 
             return;
@@ -131,6 +151,15 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
                 ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
                     $url = $whatsAppService->sendAppointmentConfirmation($record);
+
+                    $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                }),
+            Action::make('whatsapp_reminder')
+                ->label('Ricorda appuntamento')
+                ->color('success')
+                ->icon('heroicon-o-bell-alert')
+                ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+                    $url = $whatsAppService->sendAppointmentReminder($record);
 
                     $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
                 }),
