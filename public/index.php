@@ -17,4 +17,15 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
-$app->handleRequest(Request::capture());
+$request = Request::capture();
+
+$requestUri = $request->server->get('REQUEST_URI', '');
+$requestPath = parse_url($requestUri, PHP_URL_PATH);
+
+if ($requestPath === '/' || $requestPath === null || $requestPath === '') {
+    $request->server->set('REQUEST_URI', '/admin');
+    $request->server->set('PATH_INFO', '/admin');
+    $request->server->set('ORIG_PATH_INFO', '/admin');
+}
+
+$app->handleRequest($request);
