@@ -36,6 +36,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->darkMode(true, true)
             
             ->plugins([
                 FilamentFullCalendarPlugin::make()
