@@ -25,12 +25,10 @@ class ClientResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('first_name')
                     ->label('Nome')
-                    ->required()
                     ->maxLength(255),
 
                 Forms\Components\TextInput::make('last_name')
                     ->label('Cognome')
-                    ->required()
                     ->maxLength(255),
 
                 Forms\Components\TextInput::make('phone')

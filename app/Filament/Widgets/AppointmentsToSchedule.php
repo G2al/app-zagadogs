@@ -13,7 +13,7 @@ class AppointmentsToSchedule extends TableWidget
 {
     protected static ?string $heading = 'Appuntamenti da programmare';
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 3;
 
     protected int | string | array $columnSpan = 'full';
 
@@ -41,6 +41,19 @@ class AppointmentsToSchedule extends TableWidget
 
                 Tables\Columns\TextColumn::make('dog.name')
                     ->label('Cane')
+                    ->formatStateUsing(function (Appointment $record): string {
+                        $name = trim((string) ($record->dog?->name ?? ''));
+                        if ($name !== '') {
+                            return $name;
+                        }
+
+                        $breed = trim((string) ($record->dog?->breed ?? ''));
+                        if ($breed !== '') {
+                            return $breed;
+                        }
+
+                        return 'Senza nome';
+                    })
                     ->searchable()
                     ->sortable(),
 

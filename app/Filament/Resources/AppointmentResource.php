@@ -35,10 +35,16 @@ class AppointmentResource extends Resource
 
                 Forms\Components\Select::make('dog_id')
                     ->label('Cane')
-                    ->options(fn (callable $get) =>
-                        Dog::where('client_id', $get('client_id'))
-                            ->pluck('name', 'id')
-                    )
+                    ->options(fn (callable $get) => Dog::where('client_id', $get('client_id'))
+                        ->get()
+                        ->mapWithKeys(function (Dog $dog): array {
+                            $name = trim((string) ($dog->name ?? ''));
+                            $breed = trim((string) ($dog->breed ?? ''));
+                            $label = $name !== '' ? $name : ($breed !== '' ? $breed : 'Senza nome');
+
+                            return [$dog->id => $label];
+                        })
+                        ->all())
                     ->searchable()
                     ->required()
                     ->disabled(fn (callable $get) => blank($get('client_id'))),
@@ -76,6 +82,18 @@ class AppointmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('dog.name')
                     ->label('Cane')
+                    ->formatStateUsing(function (?string $state, Appointment $record): string {
+                        if ($state !== null && trim($state) !== '') {
+                            return trim($state);
+                        }
+
+                        $breed = trim((string) ($record->dog?->breed ?? ''));
+                        if ($breed !== '') {
+                            return $breed;
+                        }
+
+                        return 'Senza nome';
+                    })
                     ->sortable()
                     ->searchable(),
 

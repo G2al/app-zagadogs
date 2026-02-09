@@ -33,7 +33,6 @@ class DogResource extends Resource
 
                 Forms\Components\TextInput::make('name')
                     ->label('Nome cane')
-                    ->required()
                     ->maxLength(255),
 
                 Forms\Components\TextInput::make('breed')

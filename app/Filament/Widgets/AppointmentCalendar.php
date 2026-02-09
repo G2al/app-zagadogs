@@ -24,6 +24,13 @@ class AppointmentCalendar extends FullCalendarWidget
         return Appointment::class;
     }
 
+    public function config(): array
+    {
+        return [
+            'initialView' => 'dayGridWeek',
+        ];
+    }
+
     public function getFormSchema(): array
     {
         return [
@@ -41,11 +48,9 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->createOptionForm([
                     Forms\Components\TextInput::make('first_name')
                         ->label('Nome')
-                        ->required()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('last_name')
                         ->label('Cognome')
-                        ->required()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('phone')
                         ->label('Telefono')
@@ -61,6 +66,19 @@ class AppointmentCalendar extends FullCalendarWidget
                     'name',
                     modifyQueryUsing: fn (Builder $query, callable $get) => $query->where('client_id', $get('client_id'))
                 )
+                ->getOptionLabelFromRecordUsing(function (Dog $record): string {
+                    $name = trim((string) ($record->name ?? ''));
+                    if ($name !== '') {
+                        return $name;
+                    }
+
+                    $breed = trim((string) ($record->breed ?? ''));
+                    if ($breed !== '') {
+                        return $breed;
+                    }
+
+                    return 'Senza nome';
+                })
                 ->searchable()
                 ->preload()
                 ->required()
@@ -69,7 +87,6 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->createOptionForm([
                     Forms\Components\TextInput::make('name')
                         ->label('Nome cane')
-                        ->required()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('breed')
                         ->label('Razza')
@@ -179,9 +196,23 @@ class AppointmentCalendar extends FullCalendarWidget
             ->with(['client', 'dog'])
             ->get()
             ->map(function (Appointment $appointment) {
+                $firstName = trim((string) ($appointment->client?->first_name ?? ''));
+                $lastName = trim((string) ($appointment->client?->last_name ?? ''));
+                $clientName = trim($firstName . ' ' . $lastName);
+
+                if ($clientName === '') {
+                    $dogName = trim((string) ($appointment->dog?->name ?? ''));
+                    $dogBreed = trim((string) ($appointment->dog?->breed ?? ''));
+                    $clientName = $dogName !== '' ? $dogName : $dogBreed;
+                }
+
+                if ($clientName === '') {
+                    $clientName = 'Appuntamento';
+                }
+
                 return [
                     'id'    => $appointment->id,
-                    'title' => $appointment->dog->name,
+                    'title' => $clientName,
                     'start' => $appointment->scheduled_at->toIso8601String(),
                 ];
             })
