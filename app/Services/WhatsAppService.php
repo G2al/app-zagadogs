@@ -24,7 +24,7 @@ class WhatsAppService
             "{$whenText}.\n" .
             "ZagaDogs";
 
-        $phone = preg_replace('/\D+/', '', (string) ($appointment->client?->phone ?? ''));
+        $phone = $this->normalizeItalianPhone((string) ($appointment->client?->phone ?? ''));
 
         return 'https://wa.me/' . $phone . '?text=' . rawurlencode($message);
     }
@@ -46,7 +46,7 @@ class WhatsAppService
             "{$whenText}.\n" .
             "ZagaDogs";
 
-        $phone = preg_replace('/\D+/', '', (string) ($appointment->client?->phone ?? ''));
+        $phone = $this->normalizeItalianPhone((string) ($appointment->client?->phone ?? ''));
 
         return 'https://wa.me/' . $phone . '?text=' . rawurlencode($message);
     }
@@ -69,5 +69,24 @@ class WhatsAppService
         }
 
         return 'il ' . $scheduledAt->format('d/m/Y') . " alle {$time}";
+    }
+
+    private function normalizeItalianPhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        if (! str_starts_with($digits, '39')) {
+            $digits = '39' . $digits;
+        }
+
+        return $digits;
     }
 }

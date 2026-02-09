@@ -90,12 +90,6 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->seconds(false)
                 ->reactive(),
 
-            Forms\Components\Checkbox::make('send_whatsapp')
-                ->label('Invia conferma WhatsApp')
-                ->accepted(fn (string $operation, callable $get) => $operation === 'create' && filled($get('scheduled_at')))
-                ->required(fn (string $operation, callable $get) => $operation === 'create' && filled($get('scheduled_at')))
-                ->visible(fn (string $operation, callable $get) => $operation === 'create' && filled($get('scheduled_at'))),
-
             Forms\Components\Textarea::make('notes')
                 ->label('Note')
                 ->columnSpanFull(),
@@ -127,15 +121,25 @@ class AppointmentCalendar extends FullCalendarWidget
 
                     return $data;
                 })
-                ->after(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+                ->afterFormFilled(function () use ($action): void {
+                    $action->extraModalFooterActions([
+                        $action->makeModalSubmitAction('createAndWhatsapp', arguments: ['send_whatsapp' => true])
+                            ->label('Invia WhatsApp')
+                            ->color('success')
+                            ->icon('heroicon-o-paper-airplane'),
+                    ]);
+                })
+                ->after(function (array $arguments, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
                     $livewire->refreshRecords();
 
-                    if (filled($record->scheduled_at)) {
+                    $sendWhatsApp = (bool) ($arguments['send_whatsapp'] ?? false);
+                    if ($sendWhatsApp && filled($record->scheduled_at)) {
                         $record->update(['whatsapp_sent' => true]);
 
                         $url = $whatsAppService->sendAppointmentConfirmation($record);
+                        $encodedUrl = json_encode($url);
 
-                        $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                        $livewire->js("const url = {$encodedUrl}; const w = window.open(url, '_blank'); if (!w) { window.location.href = url; }");
                     }
                 });
 
