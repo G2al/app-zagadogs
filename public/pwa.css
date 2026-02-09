@@ -11,18 +11,21 @@ body {
 }
 
 .fi-body {
-  padding-top: var(--safe-top);
   padding-bottom: var(--safe-bottom);
 }
 
 /* Compact layout on small screens */
 @media (max-width: 640px) {
   .fi-topbar {
-    padding-top: max(8px, var(--safe-top));
+    padding-top: var(--safe-top);
   }
 
   .fi-main {
-    padding-top: max(8px, var(--safe-top));
+    padding-top: 0 !important;
+  }
+
+  .fi-page-header {
+    padding-top: 8px !important;
   }
 
   .fi-main,
