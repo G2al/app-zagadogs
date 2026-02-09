@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html,
@@ -8,8 +10,21 @@ body {
   overscroll-behavior: none;
 }
 
+.fi-body {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
 /* Compact layout on small screens */
 @media (max-width: 640px) {
+  .fi-topbar {
+    padding-top: max(8px, var(--safe-top));
+  }
+
+  .fi-main {
+    padding-top: max(8px, var(--safe-top));
+  }
+
   .fi-main,
   .fi-page {
     padding-left: 12px !important;
