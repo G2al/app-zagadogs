@@ -17,6 +17,11 @@ body {
 /* Compact layout on small screens */
 @media (max-width: 640px) {
   .fi-topbar {
+    background-color: #111827;
+  }
+
+  .fi-topbar > nav {
+    height: calc(4rem + var(--safe-top));
     padding-top: var(--safe-top);
   }
 
@@ -26,6 +31,15 @@ body {
 
   .fi-page-header {
     padding-top: 8px !important;
+  }
+
+  .fi-sidebar {
+    background-color: #111827;
+  }
+
+  .fi-sidebar-header {
+    height: calc(4rem + var(--safe-top));
+    padding-top: var(--safe-top);
   }
 
   .fi-main,

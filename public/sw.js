@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zagadogs-pwa-v5';
+const CACHE_NAME = 'zagadogs-pwa-v6';
 const STATIC_ASSETS = [
   '/offline.html',
   '/manifest.webmanifest',
@@ -7,7 +7,7 @@ const STATIC_ASSETS = [
   '/icons/icon-512-v2.png',
   '/icons/icon-192-maskable-v2.png',
   '/icons/icon-512-maskable-v2.png',
-  '/pwa.css?v=4',
+  '/pwa.css?v=5',
 ];
 
 self.addEventListener('install', (event) => {
