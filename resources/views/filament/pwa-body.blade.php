@@ -1,10 +1,4 @@
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-    }
-
     // Disable pinch + double-tap zoom for a more app-like feel
     document.addEventListener('gesturestart', (event) => event.preventDefault());
     document.addEventListener('gesturechange', (event) => event.preventDefault());
