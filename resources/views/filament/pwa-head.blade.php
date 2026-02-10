@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180-v2.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192-v2.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192-v2.png">
-<link rel="stylesheet" href="/pwa.css?v=5">
+<link rel="stylesheet" href="/pwa.css?v=6">
 <style>
     html,
     body {
