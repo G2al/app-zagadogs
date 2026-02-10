@@ -1,12 +1,12 @@
-const CACHE_NAME = 'zagadogs-pwa-v7';
+const CACHE_NAME = 'zagadogs-pwa-v8';
 const STATIC_ASSETS = [
   '/offline.html',
   '/manifest.webmanifest',
-  '/icons/icon-180-v2.png',
-  '/icons/icon-192-v2.png',
-  '/icons/icon-512-v2.png',
-  '/icons/icon-192-maskable-v2.png',
-  '/icons/icon-512-maskable-v2.png',
+  '/icons/icon-180-v3.png',
+  '/icons/icon-192-v3.png',
+  '/icons/icon-512-v3.png',
+  '/icons/icon-192-maskable-v3.png',
+  '/icons/icon-512-maskable-v3.png',
   '/pwa.css?v=6',
 ];
 

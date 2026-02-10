@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-title" content="ZagaDogs">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="ZagaDogs">
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180-v2.png">
-<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192-v2.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192-v2.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180-v3.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192-v3.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192-v3.png">
 <link rel="stylesheet" href="/pwa.css?v=6">
 <style>
     html,
