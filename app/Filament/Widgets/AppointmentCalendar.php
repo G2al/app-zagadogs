@@ -165,7 +165,7 @@ class AppointmentCalendar extends FullCalendarWidget
 
         $action->extraModalFooterActions([
             Action::make('whatsapp')
-                ->label('WhatsApp')
+                ->label('Conferma')
                 ->color('success')
                 ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
                 ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
@@ -174,13 +174,26 @@ class AppointmentCalendar extends FullCalendarWidget
                     $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
                 }),
             Action::make('whatsapp_reminder')
-                ->label('Ricorda appuntamento')
-                ->color('success')
+                ->label('Ricorda')
+                ->color('warning')
                 ->icon('heroicon-o-bell-alert')
                 ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
                     $url = $whatsAppService->sendAppointmentReminder($record);
 
                     $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                }),
+            Action::make('delete')
+                ->label('Elimina')
+                ->color('danger')
+                ->icon('heroicon-o-trash')
+                ->requiresConfirmation()
+                ->modalHeading('Elimina appuntamento')
+                ->modalDescription('Confermi l\'eliminazione di questo appuntamento?')
+                ->modalSubmitActionLabel('Elimina')
+                ->action(function (Appointment $record, $livewire): void {
+                    $record->delete();
+
+                    $livewire->refreshRecords();
                 }),
         ]);
     }
