@@ -9,7 +9,7 @@ class WhatsAppService
 {
     public function sendAppointmentConfirmation(Appointment $appointment): string
     {
-        $appointment->loadMissing(['client', 'dog']);
+        $appointment->loadMissing(['client', 'dog', 'services']);
 
         $clientName = trim((string) ($appointment->client?->first_name ?? ''));
         if ($clientName === '') {
@@ -18,9 +18,11 @@ class WhatsAppService
 
         $dogName = trim((string) ($appointment->dog?->name ?? ''));
         $whenText = $this->formatWhenText($appointment->scheduled_at);
+        $servicesText = $this->formatServicesText($appointment);
 
         $message = "Ciao {$clientName},\n" .
             "confermiamo l'appuntamento per {$dogName}\n" .
+            $servicesText .
             "{$whenText}.\n" .
             "ZagaDogs";
 
@@ -31,7 +33,7 @@ class WhatsAppService
 
     public function sendAppointmentReminder(Appointment $appointment): string
     {
-        $appointment->loadMissing(['client', 'dog']);
+        $appointment->loadMissing(['client', 'dog', 'services']);
 
         $clientName = trim((string) ($appointment->client?->first_name ?? ''));
         if ($clientName === '') {
@@ -40,9 +42,11 @@ class WhatsAppService
 
         $dogName = trim((string) ($appointment->dog?->name ?? ''));
         $whenText = $this->formatWhenText($appointment->scheduled_at);
+        $servicesText = $this->formatServicesText($appointment);
 
         $message = "Ciao {$clientName},\n" .
             "ti ricordiamo l'appuntamento per {$dogName}\n" .
+            $servicesText .
             "{$whenText}.\n" .
             "ZagaDogs";
 
@@ -88,5 +92,20 @@ class WhatsAppService
         }
 
         return $digits;
+    }
+
+    private function formatServicesText(Appointment $appointment): string
+    {
+        $services = $appointment->services
+            ->pluck('name')
+            ->map(fn (?string $name) => trim((string) $name))
+            ->filter()
+            ->values();
+
+        if ($services->isEmpty()) {
+            return '';
+        }
+
+        return 'Servizi: ' . $services->join(', ') . "\n";
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Service;
 
 class Appointment extends Model
 {
@@ -35,6 +36,11 @@ class Appointment extends Model
     public function dog()
     {
         return $this->belongsTo(Dog::class);
+    }
+
+    public function services()
+    {
+        return $this->belongsToMany(Service::class)->withTimestamps();
     }
 
     /**

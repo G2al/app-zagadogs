@@ -49,6 +49,13 @@ class AppointmentResource extends Resource
                     ->required()
                     ->disabled(fn (callable $get) => blank($get('client_id'))),
 
+                Forms\Components\Select::make('services')
+                    ->label('Servizi')
+                    ->relationship('services', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
+
                 Forms\Components\DateTimePicker::make('scheduled_at')
                     ->label('Data e ora')
                     ->minDate(now()->startOfMinute())
@@ -95,6 +102,13 @@ class AppointmentResource extends Resource
                         return 'Senza nome';
                     })
                     ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('services.name')
+                    ->label('Servizi')
+                    ->badge()
+                    ->separator(', ')
+                    ->limitList(3)
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('scheduled_at')

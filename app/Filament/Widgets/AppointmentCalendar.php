@@ -101,6 +101,13 @@ class AppointmentCalendar extends FullCalendarWidget
                     return Dog::query()->create($data)->getKey();
                 }),
 
+            Forms\Components\Select::make('services')
+                ->label('Servizi')
+                ->relationship('services', 'name')
+                ->multiple()
+                ->preload()
+                ->searchable(),
+
             Forms\Components\DateTimePicker::make('scheduled_at')
                 ->label('Data e ora')
                 ->minDate(now()->startOfMinute())
@@ -210,7 +217,7 @@ class AppointmentCalendar extends FullCalendarWidget
         return Appointment::query()
             ->where('status', 'confirmed')
             ->whereNotNull('scheduled_at')
-            ->with(['client', 'dog'])
+            ->with(['client', 'dog', 'services'])
             ->get()
             ->map(function (Appointment $appointment) {
                 $firstName = trim((string) ($appointment->client?->first_name ?? ''));
@@ -227,10 +234,28 @@ class AppointmentCalendar extends FullCalendarWidget
                     $clientName = 'Appuntamento';
                 }
 
+                $serviceColors = $appointment->services
+                    ->pluck('color')
+                    ->map(fn (?string $color) => trim((string) $color))
+                    ->filter()
+                    ->values();
+
+                $serviceNames = $appointment->services
+                    ->pluck('name')
+                    ->map(fn (?string $name) => trim((string) $name))
+                    ->filter()
+                    ->values();
+
+                $serviceColor = $serviceColors->first();
+
                 return [
                     'id'    => $appointment->id,
                     'title' => $clientName,
                     'start' => $appointment->scheduled_at->toIso8601String(),
+                    'backgroundColor' => $serviceColor ?: '#16a34a',
+                    'borderColor' => $serviceColor ?: '#16a34a',
+                    'serviceColors' => $serviceColors->toArray(),
+                    'serviceNames' => $serviceNames->toArray(),
                 ];
             })
             ->toArray();
@@ -250,12 +275,33 @@ class AppointmentCalendar extends FullCalendarWidget
         return <<<'JS'
             function(arg) {
                 const title = arg.event.title || '';
-                const time = arg.timeText ? `<div style="font-size:11px;opacity:.9;">${arg.timeText}</div>` : '';
+                const timeText = arg.timeText || '';
+                const colors = Array.isArray(arg.event.extendedProps?.serviceColors)
+                    ? arg.event.extendedProps.serviceColors
+                    : [];
+                const serviceNames = Array.isArray(arg.event.extendedProps?.serviceNames)
+                    ? arg.event.extendedProps.serviceNames
+                    : [];
+                const serviceLine = timeText
+                    ? `<div style="font-size:10px;opacity:.9;">${timeText}</div>`
+                    : '';
+                const servicesList = serviceNames.length
+                    ? `<div style="margin-top:2px;display:flex;flex-direction:column;gap:2px;">
+                        ${serviceNames.map((name, idx) => {
+                            const color = colors[idx] || '#ffffff';
+                            return `<div style="display:flex;align-items:center;gap:4px;">
+                                <span style="width:6px;height:6px;border-radius:999px;background:${color};display:inline-block;"></span>
+                                <span style="font-size:10px;opacity:.9;">${name}</span>
+                            </div>`;
+                        }).join('')}
+                       </div>`
+                    : '';
 
                 return {
                     html: `<div style="line-height:1.1;">
-                        <div style="font-weight:600;">${title}</div>
-                        ${time}
+                        <div style="font-weight:600;font-size:11px;">${title}</div>
+                        ${serviceLine}
+                        ${servicesList}
                     </div>`,
                 };
             }
@@ -267,8 +313,9 @@ class AppointmentCalendar extends FullCalendarWidget
         return <<<'JS'
             function(info) {
                 const el = info.el;
-                el.style.backgroundColor = '#16a34a';
-                el.style.borderColor = '#15803d';
+                const bg = info.event.backgroundColor || '#16a34a';
+                el.style.backgroundColor = bg;
+                el.style.borderColor = bg;
                 el.style.color = '#ffffff';
                 el.style.borderRadius = '8px';
                 el.style.padding = '2px 6px';
