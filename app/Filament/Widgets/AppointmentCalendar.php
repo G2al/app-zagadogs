@@ -156,7 +156,7 @@ class AppointmentCalendar extends FullCalendarWidget
                         $url = $whatsAppService->sendAppointmentConfirmation($record);
                         $encodedUrl = json_encode($url);
 
-                        $livewire->js("const url = {$encodedUrl}; const w = window.open(url, '_blank'); if (!w) { window.location.href = url; }");
+                        $livewire->js("window.location.href = {$encodedUrl};");
                     }
                 });
 
@@ -171,7 +171,7 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
                     $url = $whatsAppService->sendAppointmentConfirmation($record);
 
-                    $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                    $livewire->js('window.location.href = ' . json_encode($url));
                 }),
             Action::make('whatsapp_reminder')
                 ->label('Ricorda')
@@ -180,7 +180,7 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->action(function (Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
                     $url = $whatsAppService->sendAppointmentReminder($record);
 
-                    $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                    $livewire->js('window.location.href = ' . json_encode($url));
                 }),
             Action::make('delete')
                 ->label('Elimina')

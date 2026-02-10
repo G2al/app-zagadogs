@@ -96,7 +96,7 @@ class AppointmentsToSchedule extends TableWidget
 
                         $livewire->dispatch('filament-fullcalendar--refresh');
                         $livewire->dispatch('appointments-to-schedule--refresh');
-                        $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                        $livewire->js('window.location.href = ' . json_encode($url));
                     }),
             ])
             ->emptyStateHeading('Nessun appuntamento da programmare');
