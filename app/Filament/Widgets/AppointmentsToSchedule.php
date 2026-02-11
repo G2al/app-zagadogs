@@ -17,6 +17,9 @@ class AppointmentsToSchedule extends TableWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    // 🔥 DISABILITA IL LAZY LOADING (RISOLVE IL 500)
+    protected static bool $isLazy = false;
+
     protected $listeners = [
         'appointments-to-schedule--refresh' => '$refresh',
     ];
@@ -34,7 +37,10 @@ class AppointmentsToSchedule extends TableWidget
                 Tables\Columns\TextColumn::make('client.last_name')
                     ->label('Cliente')
                     ->formatStateUsing(fn (Appointment $record): string =>
-                        trim($record->client->last_name . ' ' . $record->client->first_name)
+                        trim(
+                            ($record->client->last_name ?? '') . ' ' .
+                            ($record->client->first_name ?? '')
+                        )
                     )
                     ->searchable()
                     ->sortable(),
@@ -78,12 +84,14 @@ class AppointmentsToSchedule extends TableWidget
                             ->minDate(now()->startOfMinute())
                             ->seconds(false)
                             ->required(),
+
                         Forms\Components\Checkbox::make('send_whatsapp')
                             ->label('Invia conferma WhatsApp')
                             ->accepted()
                             ->required(),
                     ])
                     ->action(function (array $data, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+
                         $record->update([
                             'scheduled_at' => $data['scheduled_at'],
                             'status' => 'confirmed',
@@ -96,6 +104,7 @@ class AppointmentsToSchedule extends TableWidget
 
                         $livewire->dispatch('filament-fullcalendar--refresh');
                         $livewire->dispatch('appointments-to-schedule--refresh');
+
                         $livewire->js('window.location.href = ' . json_encode($url));
                     }),
             ])
