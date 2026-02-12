@@ -28,6 +28,18 @@ class AppointmentResource extends Resource
                 Forms\Components\Select::make('client_id')
                     ->label('Cliente')
                     ->relationship('client', 'last_name')
+                    ->getOptionLabelFromRecordUsing(function (Client $record): string {
+                        $firstName = trim((string) ($record->first_name ?? ''));
+                        $lastName = trim((string) ($record->last_name ?? ''));
+                        $fullName = trim($lastName . ' ' . $firstName);
+
+                        if ($fullName !== '') {
+                            return $fullName;
+                        }
+
+                        $phone = trim((string) ($record->phone ?? ''));
+                        return $phone !== '' ? $phone : 'Cliente senza nome';
+                    })
                     ->searchable()
                     ->preload()
                     ->required()
