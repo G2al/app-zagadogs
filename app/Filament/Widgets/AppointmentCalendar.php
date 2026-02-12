@@ -365,18 +365,14 @@ class AppointmentCalendar extends FullCalendarWidget
                 const title = arg.event.title || '';
                 const serviceLabel = arg.event.extendedProps?.serviceLabel || '';
                 const displayTime = arg.event.extendedProps?.displayTime || '';
-                const serviceLine = serviceLabel
-                    ? `<div style="font-size:12px;opacity:.95;margin-top:2px;">${serviceLabel}</div>`
-                    : '';
-                const timeLine = displayTime
-                    ? `<div style="font-size:11px;opacity:.85;margin-top:2px;">${displayTime}</div>`
+                const detailLine = (displayTime || serviceLabel)
+                    ? `<div style="font-size:12px;opacity:.95;margin-top:2px;">${displayTime} ${serviceLabel}</div>`
                     : '';
 
                 return {
                     html: `<div style="line-height:1.15;">
                         <div style="font-weight:700;font-size:13px;">${title}</div>
-                        ${serviceLine}
-                        ${timeLine}
+                        ${detailLine}
                     </div>`,
                 };
             }
@@ -412,7 +408,7 @@ class AppointmentCalendar extends FullCalendarWidget
 
                 let attempts = 0;
                 const applyStacking = () => {
-                    const fullHeight = el.offsetHeight || 0;
+                    const fullHeight = (harness?.offsetHeight || 0) || (el.offsetHeight || 0);
                     if (fullHeight < 12) {
                         if (attempts < 6) {
                             attempts += 1;
@@ -425,10 +421,23 @@ class AppointmentCalendar extends FullCalendarWidget
                         const slice = fullHeight / stackCount;
                         const height = Math.max(12, Math.floor(slice) - 2);
                         const offset = slice * stackIndex;
-                        el.style.height = `${height}px`;
-                        el.style.maxHeight = `${height}px`;
-                        el.style.transform = `translateY(${offset}px)`;
+
+                        if (harness) {
+                            harness.style.height = `${height}px`;
+                            harness.style.maxHeight = `${height}px`;
+                            harness.style.transform = `translateY(${offset}px)`;
+                        }
+
+                        el.style.height = '100%';
+                        el.style.maxHeight = '100%';
+                        el.style.transform = '';
                     } else {
+                        if (harness) {
+                            harness.style.height = '';
+                            harness.style.maxHeight = '';
+                            harness.style.transform = '';
+                        }
+
                         el.style.height = '';
                         el.style.maxHeight = '';
                         el.style.transform = '';
