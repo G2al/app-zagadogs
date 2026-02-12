@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class DogResource extends Resource
 {
@@ -68,8 +69,35 @@ class DogResource extends Resource
 
                 Tables\Columns\TextColumn::make('client.last_name')
                     ->label('Cliente')
+                    ->formatStateUsing(function (?string $state, Dog $record): string {
+                        $firstName = trim((string) ($record->client?->first_name ?? ''));
+                        $lastName = trim((string) ($record->client?->last_name ?? ''));
+                        $fullName = trim($lastName . ' ' . $firstName);
+
+                        if ($fullName !== '') {
+                            return $fullName;
+                        }
+
+                        $phone = trim((string) ($record->client?->phone ?? ''));
+                        return $phone !== '' ? $phone : 'Cliente senza nome';
+                    })
                     ->sortable()
-                    ->searchable(),
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        $terms = array_values(array_filter(preg_split('/\s+/', trim($search))));
+
+                        return $query->whereHas('client', function (Builder $clientQuery) use ($terms): void {
+                            foreach ($terms as $term) {
+                                $clientQuery->where(function (Builder $inner) use ($term): void {
+                                    $like = '%' . $term . '%';
+                                    $inner
+                                        ->where('first_name', 'like', $like)
+                                        ->orWhere('last_name', 'like', $like)
+                                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like])
+                                        ->orWhereRaw("CONCAT(last_name, ' ', first_name) LIKE ?", [$like]);
+                                });
+                            }
+                        });
+                    }),
 
                 Tables\Columns\TextColumn::make('breed')
                     ->label('Razza'),
