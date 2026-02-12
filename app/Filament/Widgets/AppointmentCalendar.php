@@ -69,9 +69,22 @@ class AppointmentCalendar extends FullCalendarWidget
             Forms\Components\Select::make('client_id')
                 ->label('Cliente')
                 ->relationship('client', 'last_name')
-                ->getOptionLabelFromRecordUsing(
-                    fn (Client $record): string => trim($record->last_name . ' ' . $record->first_name)
-                )
+                ->getOptionLabelFromRecordUsing(function (Client $record): string {
+                    $firstName = trim((string) ($record->first_name ?? ''));
+                    $lastName = trim((string) ($record->last_name ?? ''));
+                    $fullName = trim($lastName . ' ' . $firstName);
+                    $phone = trim((string) ($record->phone ?? ''));
+
+                    if ($fullName !== '' && $phone !== '') {
+                        return $fullName . ' - ' . $phone;
+                    }
+
+                    if ($fullName !== '') {
+                        return $fullName;
+                    }
+
+                    return $phone !== '' ? $phone : 'Cliente senza nome';
+                })
                 ->searchable()
                 ->preload()
                 ->required()
@@ -90,6 +103,20 @@ class AppointmentCalendar extends FullCalendarWidget
                         ->unique(table: Client::class, column: 'phone')
                         ->maxLength(255),
                 ]),
+
+            Forms\Components\Placeholder::make('client_phone')
+                ->label('Telefono cliente')
+                ->content(function (callable $get): string {
+                    $clientId = $get('client_id');
+
+                    if (blank($clientId)) {
+                        return '-';
+                    }
+
+                    $phone = Client::query()->whereKey($clientId)->value('phone');
+
+                    return filled($phone) ? (string) $phone : '-';
+                }),
 
             Forms\Components\Select::make('dog_id')
                 ->label('Cane')
