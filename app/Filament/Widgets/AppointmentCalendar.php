@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Saade\FilamentFullCalendar\Actions\EditAction;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
@@ -27,7 +28,38 @@ class AppointmentCalendar extends FullCalendarWidget
     public function config(): array
     {
         return [
-            'initialView' => 'dayGridWeek',
+            'initialView' => 'timeGridWeek',
+            'headerToolbar' => [
+                'left' => 'prev,next today',
+                'center' => 'title',
+                'right' => 'dayGridMonth,dayGridWeek,dayGridDay,gridWeek',
+            ],
+            'views' => [
+                'gridWeek' => [
+                    'type' => 'timeGridWeek',
+                    'buttonText' => 'Griglia',
+                    'eventOverlap' => false,
+                    'slotEventOverlap' => false,
+                ],
+            ],
+            'allDaySlot' => false,
+            'slotMinTime' => '06:00:00',
+            'slotMaxTime' => '24:00:00',
+            'slotDuration' => '00:12:00',
+            'slotLabelInterval' => '01:00',
+            'slotLabelFormat' => [
+                'hour' => '2-digit',
+                'minute' => '2-digit',
+                'hour12' => false,
+            ],
+            'nowIndicator' => true,
+            'stickyHeaderDates' => true,
+            'expandRows' => true,
+            'eventMinHeight' => 36,
+            'slotEventOverlap' => true,
+            'eventOverlap' => true,
+            'eventOrder' => 'start',
+            'dayMaxEventRows' => false,
         ];
     }
 
@@ -214,15 +246,27 @@ class AppointmentCalendar extends FullCalendarWidget
      */
     public function fetchEvents(array $fetchInfo): array
     {
-        return Appointment::query()
+        $appointmentsCollection = Appointment::query()
             ->where('status', 'confirmed')
             ->whereNotNull('scheduled_at')
             ->with(['client', 'dog', 'services'])
             ->get()
-            ->map(function (Appointment $appointment) {
+            ->sortBy(fn (Appointment $appointment) => $appointment->scheduled_at?->timestamp ?? 0)
+            ->values();
+
+        $stackCounts = $appointmentsCollection
+            ->groupBy(fn (Appointment $appointment) => $appointment->scheduled_at->format('Y-m-d H:i'))
+            ->map(fn ($group) => $group->count());
+
+        $stackGlobalMax = $stackCounts->max() ?? 1;
+
+        $stackCursor = [];
+
+        $appointments = $appointmentsCollection
+            ->map(function (Appointment $appointment) use (&$stackCursor, $stackCounts, $stackGlobalMax) {
                 $firstName = trim((string) ($appointment->client?->first_name ?? ''));
                 $lastName = trim((string) ($appointment->client?->last_name ?? ''));
-                $clientName = trim($firstName . ' ' . $lastName);
+                $clientName = trim($lastName . ' ' . $firstName);
 
                 if ($clientName === '') {
                     $dogName = trim((string) ($appointment->dog?->name ?? ''));
@@ -242,23 +286,66 @@ class AppointmentCalendar extends FullCalendarWidget
 
                 $serviceNames = $appointment->services
                     ->pluck('name')
-                    ->map(fn (?string $name) => trim((string) $name))
+                    ->map(fn (?string $name) => $this->abbreviateServiceName((string) ($name ?? '')))
                     ->filter()
                     ->values();
 
                 $serviceColor = $serviceColors->first();
+                $serviceLabel = $serviceNames->implode(' + ');
 
+                $stackKey = $appointment->scheduled_at->format('Y-m-d H:i');
+                $stackIndex = $stackCursor[$stackKey] ?? 0;
+                $stackCursor[$stackKey] = $stackIndex + 1;
                 return [
                     'id'    => $appointment->id,
                     'title' => $clientName,
                     'start' => $appointment->scheduled_at->toIso8601String(),
+                    'displayTime' => $appointment->scheduled_at->format('H:i'),
                     'backgroundColor' => $serviceColor ?: '#16a34a',
                     'borderColor' => $serviceColor ?: '#16a34a',
-                    'serviceColors' => $serviceColors->toArray(),
-                    'serviceNames' => $serviceNames->toArray(),
+                    'serviceLabel' => $serviceLabel,
+                    'stackIndex' => $stackIndex,
+                    'stackCount' => $stackCounts->get($stackKey, 1),
+                    'stackGlobalMax' => $stackGlobalMax,
                 ];
             })
             ->toArray();
+
+        $backgrounds = [];
+        $rangeStart = $fetchInfo['start'] ?? $fetchInfo['startStr'] ?? null;
+        $rangeEnd = $fetchInfo['end'] ?? $fetchInfo['endStr'] ?? null;
+
+        if ($rangeStart && $rangeEnd) {
+            $cursor = Carbon::parse($rangeStart)->startOfDay();
+            $end = Carbon::parse($rangeEnd)->startOfDay();
+
+            while ($cursor->lt($end)) {
+                $morningStart = $cursor->copy()->setTime(6, 0);
+                $morningEnd = $cursor->copy()->setTime(13, 30);
+                $eveningStart = $morningEnd->copy();
+                $eveningEnd = $cursor->copy()->addDay()->startOfDay();
+
+                $backgrounds[] = [
+                    'id' => 'bg-mattina-' . $cursor->toDateString(),
+                    'start' => $morningStart->toIso8601String(),
+                    'end' => $morningEnd->toIso8601String(),
+                    'display' => 'background',
+                    'classNames' => ['bg-mattina'],
+                ];
+
+                $backgrounds[] = [
+                    'id' => 'bg-pomeriggio-' . $cursor->toDateString(),
+                    'start' => $eveningStart->toIso8601String(),
+                    'end' => $eveningEnd->toIso8601String(),
+                    'display' => 'background',
+                    'classNames' => ['bg-pomeriggio'],
+                ];
+
+                $cursor->addDay();
+            }
+        }
+
+        return array_merge($backgrounds, $appointments);
     }
 
     public function eventClassNames(): string
@@ -275,33 +362,20 @@ class AppointmentCalendar extends FullCalendarWidget
         return <<<'JS'
             function(arg) {
                 const title = arg.event.title || '';
-                const timeText = arg.timeText || '';
-                const colors = Array.isArray(arg.event.extendedProps?.serviceColors)
-                    ? arg.event.extendedProps.serviceColors
-                    : [];
-                const serviceNames = Array.isArray(arg.event.extendedProps?.serviceNames)
-                    ? arg.event.extendedProps.serviceNames
-                    : [];
-                const serviceLine = timeText
-                    ? `<div style="font-size:10px;opacity:.9;">${timeText}</div>`
+                const serviceLabel = arg.event.extendedProps?.serviceLabel || '';
+                const displayTime = arg.event.extendedProps?.displayTime || '';
+                const serviceLine = serviceLabel
+                    ? `<div style="font-size:12px;opacity:.95;margin-top:2px;">${serviceLabel}</div>`
                     : '';
-                const servicesList = serviceNames.length
-                    ? `<div style="margin-top:2px;display:flex;flex-direction:column;gap:2px;">
-                        ${serviceNames.map((name, idx) => {
-                            const color = colors[idx] || '#ffffff';
-                            return `<div style="display:flex;align-items:center;gap:4px;">
-                                <span style="width:6px;height:6px;border-radius:999px;background:${color};display:inline-block;"></span>
-                                <span style="font-size:10px;opacity:.9;">${name}</span>
-                            </div>`;
-                        }).join('')}
-                       </div>`
+                const timeLine = displayTime
+                    ? `<div style="font-size:11px;opacity:.85;margin-top:2px;">${displayTime}</div>`
                     : '';
 
                 return {
-                    html: `<div style="line-height:1.1;">
-                        <div style="font-weight:600;font-size:11px;">${title}</div>
+                    html: `<div style="line-height:1.15;">
+                        <div style="font-weight:700;font-size:13px;">${title}</div>
                         ${serviceLine}
-                        ${servicesList}
+                        ${timeLine}
                     </div>`,
                 };
             }
@@ -320,6 +394,47 @@ class AppointmentCalendar extends FullCalendarWidget
                 el.style.borderRadius = '8px';
                 el.style.padding = '2px 6px';
                 el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.2)';
+
+                if (!el.classList.contains('fc-timegrid-event')) {
+                    return;
+                }
+
+                const stackIndex = Number(info.event.extendedProps?.stackIndex || 0);
+                const stackCount = Number(info.event.extendedProps?.stackCount || 1);
+                const harness = el.closest('.fc-timegrid-event-harness');
+                if (harness) {
+                    harness.style.left = '0';
+                    harness.style.right = '0';
+                    harness.style.width = '100%';
+                    harness.style.zIndex = String(10 + stackIndex);
+                }
+
+                let attempts = 0;
+                const applyStacking = () => {
+                    const fullHeight = el.offsetHeight || 0;
+                    if (fullHeight < 12) {
+                        if (attempts < 6) {
+                            attempts += 1;
+                            setTimeout(applyStacking, 40);
+                        }
+                        return;
+                    }
+
+                    if (stackCount > 1) {
+                        const slice = fullHeight / stackCount;
+                        const height = Math.max(12, Math.floor(slice) - 2);
+                        const offset = slice * stackIndex;
+                        el.style.height = `${height}px`;
+                        el.style.maxHeight = `${height}px`;
+                        el.style.transform = `translateY(${offset}px)`;
+                    } else {
+                        el.style.height = '';
+                        el.style.maxHeight = '';
+                        el.style.transform = '';
+                    }
+                };
+
+                requestAnimationFrame(applyStacking);
             }
         JS;
     }
@@ -340,5 +455,26 @@ class AppointmentCalendar extends FullCalendarWidget
     {
         $this->dispatch('filament-fullcalendar--refresh');
         $this->dispatch('appointments-to-schedule--refresh');
+    }
+
+    private function abbreviateServiceName(string $name): string
+    {
+        $value = trim($name);
+        if ($value === '') {
+            return '';
+        }
+
+        $replacements = [
+            'spazzolatura' => 'Spazz.',
+            'toelettatura' => 'Toelett.',
+        ];
+
+        foreach ($replacements as $search => $replace) {
+            $value = str_ireplace($search, $replace, $value);
+        }
+
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+
+        return trim($value);
     }
 }

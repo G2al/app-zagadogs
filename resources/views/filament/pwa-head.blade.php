@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180-v4.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192-v4.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192-v4.png">
-<link rel="stylesheet" href="/pwa.css?v=6">
+<link rel="stylesheet" href="/pwa.css?v=18">
 <style>
     html,
     body {
@@ -33,7 +33,7 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=4').catch(() => {});
+            navigator.serviceWorker.register('/sw.js?v=14').catch(() => {});
         });
     }
 </script>

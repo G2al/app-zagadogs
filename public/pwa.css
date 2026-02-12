@@ -124,3 +124,55 @@ body {
     overflow-x: hidden;
   }
 }
+
+/* FullCalendar timeGrid morning/afternoon background */
+.fc .fc-bg-event.bg-mattina {
+  background-color: rgba(34, 197, 94, 0.08) !important;
+}
+
+.fc .fc-bg-event.bg-pomeriggio {
+  background-color: rgba(251, 146, 60, 0.08) !important;
+}
+
+.fc .fc-timegrid-slot[data-time="13:30:00"],
+.fc .fc-timegrid-slot-label[data-time="13:30:00"] {
+  border-top: 2px solid rgba(251, 146, 60, 0.45);
+}
+
+.fc .fc-timegrid-slot-label[data-time="06:00:00"] .fc-timegrid-slot-label-cushion::after {
+  content: "  Mattina";
+  font-size: 0.7rem;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.fc .fc-timegrid-slot-label[data-time="13:30:00"] .fc-timegrid-slot-label-cushion::after {
+  content: "  Pomeriggio";
+  font-size: 0.7rem;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.fc .fc-timegrid-slot {
+  height: 3.2em;
+}
+
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label {
+  font-size: 0.85rem;
+}
+
+.fc .fc-timegrid-event {
+  font-size: 0.85rem;
+}
+
+/* Stack overlapping events vertically within the same time slot */
+.fc-timegrid .fc-timegrid-event-harness {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+
+.fc-timegrid .fc-timegrid-event {
+  width: calc(100% - 2px) !important;
+}
