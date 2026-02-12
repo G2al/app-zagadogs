@@ -45,7 +45,7 @@ class AppointmentCalendar extends FullCalendarWidget
             'allDaySlot' => false,
             'slotMinTime' => '06:00:00',
             'slotMaxTime' => '24:00:00',
-            'slotDuration' => '00:12:00',
+            'slotDuration' => '00:10:00',
             'slotLabelInterval' => '01:00',
             'slotLabelFormat' => [
                 'hour' => '2-digit',
@@ -300,6 +300,7 @@ class AppointmentCalendar extends FullCalendarWidget
                     'id'    => $appointment->id,
                     'title' => $clientName,
                     'start' => $appointment->scheduled_at->toIso8601String(),
+                    'end' => $appointment->scheduled_at->copy()->addMinutes(30)->toIso8601String(),
                     'displayTime' => $appointment->scheduled_at->format('H:i'),
                     'backgroundColor' => $serviceColor ?: '#16a34a',
                     'borderColor' => $serviceColor ?: '#16a34a',
