@@ -18,6 +18,8 @@ class AppointmentCalendar extends FullCalendarWidget
 {
     protected static ?string $heading = 'Calendario Appuntamenti';
 
+    protected static string $view = 'filament.widgets.appointment-calendar';
+
     protected static ?int $sort = 2;
 
     public function getModel(): ?string
@@ -319,6 +321,7 @@ class AppointmentCalendar extends FullCalendarWidget
 
                 $serviceColor = $serviceColors->first();
                 $serviceLabel = $serviceNames->implode(' + ');
+                $dogBreed = trim((string) ($appointment->dog?->breed ?? ''));
 
                 $stackKey = $appointment->scheduled_at->format('Y-m-d H:i');
                 $stackIndex = $stackCursor[$stackKey] ?? 0;
@@ -332,6 +335,7 @@ class AppointmentCalendar extends FullCalendarWidget
                     'backgroundColor' => $serviceColor ?: '#16a34a',
                     'borderColor' => $serviceColor ?: '#16a34a',
                     'serviceLabel' => $serviceLabel,
+                    'dogBreed' => $dogBreed,
                     'stackIndex' => $stackIndex,
                     'stackCount' => $stackCounts->get($stackKey, 1),
                     'stackGlobalMax' => $stackGlobalMax,
@@ -392,13 +396,16 @@ class AppointmentCalendar extends FullCalendarWidget
                 const title = arg.event.title || '';
                 const serviceLabel = arg.event.extendedProps?.serviceLabel || '';
                 const displayTime = arg.event.extendedProps?.displayTime || '';
+                const isDayView = arg.view?.type === 'dayGridDay';
+                const titleFontSize = isDayView ? '15.5px' : '13px';
+                const detailFontSize = isDayView ? '14.5px' : '12px';
                 const detailLine = (displayTime || serviceLabel)
-                    ? `<div style="font-size:12px;opacity:.95;margin-top:2px;">${displayTime} ${serviceLabel}</div>`
+                    ? `<div style="font-size:${detailFontSize};opacity:.95;margin-top:2px;">${displayTime} ${serviceLabel}</div>`
                     : '';
 
                 return {
-                    html: `<div style="line-height:1.15;">
-                        <div style="font-weight:700;font-size:13px;">${title}</div>
+                    html: `<div style="width:100%;min-height:42px;line-height:1.15;">
+                        <div style="font-weight:700;font-size:${titleFontSize};">${title}</div>
                         ${detailLine}
                     </div>`,
                 };
@@ -411,6 +418,9 @@ class AppointmentCalendar extends FullCalendarWidget
         return <<<'JS'
             function(info) {
                 const el = info.el;
+                const dogBreed = info.event.extendedProps?.dogBreed || '';
+                const isDayView = info.view?.type === 'dayGridDay';
+                const isAppointment = info.event.display !== 'background';
                 const bg = info.event.backgroundColor || '#16a34a';
                 el.style.backgroundColor = bg;
                 el.style.borderColor = bg;
@@ -418,6 +428,60 @@ class AppointmentCalendar extends FullCalendarWidget
                 el.style.borderRadius = '8px';
                 el.style.padding = '2px 6px';
                 el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.2)';
+                el.style.position = 'relative';
+
+                if (isDayView && isAppointment && dogBreed) {
+                    el.dataset.zagaDogBreed = dogBreed;
+                    el.style.paddingRight = '35%';
+
+                    const breedBadge = document.createElement('div');
+                    breedBadge.textContent = dogBreed;
+                    breedBadge.style.position = 'absolute';
+                    breedBadge.style.right = '10px';
+                    breedBadge.style.bottom = '6px';
+                    breedBadge.style.maxWidth = '32%';
+                    breedBadge.style.overflow = 'hidden';
+                    breedBadge.style.textOverflow = 'ellipsis';
+                    breedBadge.style.whiteSpace = 'nowrap';
+                    breedBadge.style.textAlign = 'right';
+                    breedBadge.style.fontSize = '14.5px';
+                    breedBadge.style.fontWeight = '700';
+                    breedBadge.style.lineHeight = '1.1';
+                    breedBadge.style.pointerEvents = 'none';
+                    breedBadge.style.zIndex = '2';
+                    el.appendChild(breedBadge);
+                }
+
+                const pushBreedStats = () => {
+                    const calendarEl = el.closest('.filament-fullcalendar');
+                    const breedCounts = {};
+
+                    if (isDayView && calendarEl) {
+                        calendarEl.querySelectorAll('.fc-event[data-zaga-dog-breed]').forEach((eventEl) => {
+                            const breed = eventEl.dataset.zagaDogBreed || '';
+
+                            if (breed) {
+                                breedCounts[breed] = (breedCounts[breed] || 0) + 1;
+                            }
+                        });
+                    }
+
+                    const breedStats = Object.entries(breedCounts)
+                        .sort(([breedA], [breedB]) => breedA.localeCompare(breedB))
+                        .map(([breed, count]) => ({ breed, count }));
+
+                    window.dispatchEvent(new CustomEvent('zaga-calendar-breed-stats', {
+                        detail: {
+                            isDayView,
+                            calendarDay: isDayView && info.view?.currentStart
+                                ? info.view.currentStart.toLocaleDateString('it-IT')
+                                : '',
+                            breedStats,
+                        },
+                    }));
+                };
+
+                requestAnimationFrame(pushBreedStats);
 
                 if (!el.classList.contains('fc-timegrid-event')) {
                     return;
@@ -472,6 +536,43 @@ class AppointmentCalendar extends FullCalendarWidget
                 };
 
                 requestAnimationFrame(applyStacking);
+            }
+        JS;
+    }
+
+    public function eventWillUnmount(): string
+    {
+        return <<<'JS'
+            function(info) {
+                requestAnimationFrame(() => {
+                    const isDayView = info.view?.type === 'dayGridDay';
+                    const calendarEl = document.querySelector('.filament-fullcalendar');
+                    const breedCounts = {};
+
+                    if (isDayView && calendarEl) {
+                        calendarEl.querySelectorAll('.fc-event[data-zaga-dog-breed]').forEach((eventEl) => {
+                            const breed = eventEl.dataset.zagaDogBreed || '';
+
+                            if (breed) {
+                                breedCounts[breed] = (breedCounts[breed] || 0) + 1;
+                            }
+                        });
+                    }
+
+                    const breedStats = Object.entries(breedCounts)
+                        .sort(([breedA], [breedB]) => breedA.localeCompare(breedB))
+                        .map(([breed, count]) => ({ breed, count }));
+
+                    window.dispatchEvent(new CustomEvent('zaga-calendar-breed-stats', {
+                        detail: {
+                            isDayView,
+                            calendarDay: isDayView && info.view?.currentStart
+                                ? info.view.currentStart.toLocaleDateString('it-IT')
+                                : '',
+                            breedStats,
+                        },
+                    }));
+                });
             }
         JS;
     }
