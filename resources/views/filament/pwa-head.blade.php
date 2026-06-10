@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180-v4.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192-v4.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192-v4.png">
-<link rel="stylesheet" href="/pwa.css?v=18">
+<link rel="stylesheet" href="/pwa.css?v=19">
 <style>
     html,
     body {
@@ -22,6 +22,10 @@
     }
 </style>
 <script>
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        document.documentElement.classList.add('is-pwa-standalone');
+    }
+
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) {
         viewport.setAttribute(
@@ -33,7 +37,7 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=14').catch(() => {});
+            navigator.serviceWorker.register('/sw.js?v=15').catch(() => {});
         });
     }
 </script>

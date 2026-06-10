@@ -2,6 +2,7 @@
   color-scheme: dark;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --pwa-topbar-offset: 14px;
 }
 
 html,
@@ -74,20 +75,34 @@ body {
 }
 
 /* Safe-area handling for PWA standalone */
-@media (max-width: 640px) and (display-mode: standalone) {
+@media (display-mode: standalone) {
   .fi-topbar {
     background-color: #111827;
   }
 
   .fi-topbar > nav {
-    height: calc(4rem + var(--safe-top));
-    padding-top: var(--safe-top);
+    height: calc(4rem + var(--safe-top) + var(--pwa-topbar-offset));
+    padding-top: calc(var(--safe-top) + var(--pwa-topbar-offset));
   }
 
   .fi-sidebar-header {
-    height: calc(4rem + var(--safe-top));
-    padding-top: var(--safe-top);
+    height: calc(4rem + var(--safe-top) + var(--pwa-topbar-offset));
+    padding-top: calc(var(--safe-top) + var(--pwa-topbar-offset));
   }
+}
+
+html.is-pwa-standalone .fi-topbar {
+  background-color: #111827;
+}
+
+html.is-pwa-standalone .fi-topbar > nav {
+  height: calc(4rem + var(--safe-top) + var(--pwa-topbar-offset));
+  padding-top: calc(var(--safe-top) + var(--pwa-topbar-offset));
+}
+
+html.is-pwa-standalone .fi-sidebar-header {
+  height: calc(4rem + var(--safe-top) + var(--pwa-topbar-offset));
+  padding-top: calc(var(--safe-top) + var(--pwa-topbar-offset));
 }
 
 /* FullCalendar mobile tuning */
