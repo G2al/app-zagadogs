@@ -9,22 +9,23 @@ class WhatsAppService
 {
     public function sendAppointmentConfirmation(Appointment $appointment): string
     {
-        $appointment->loadMissing(['client', 'dog', 'services']);
+        $appointment->loadMissing(['client', 'staff', 'services']);
 
         $clientName = trim((string) ($appointment->client?->first_name ?? ''));
         if ($clientName === '') {
             $clientName = trim((string) ($appointment->client?->last_name ?? ''));
         }
 
-        $dogName = trim((string) ($appointment->dog?->name ?? ''));
+        $staffText = $this->formatStaffText($appointment);
         $whenText = $this->formatWhenText($appointment->scheduled_at);
         $servicesText = $this->formatServicesText($appointment);
 
         $message = "Ciao {$clientName},\n" .
-            "confermiamo l'appuntamento per {$dogName}\n" .
+            "confermiamo il tuo appuntamento\n" .
+            $staffText .
             $servicesText .
             "{$whenText}.\n" .
-            "ZagaDogs";
+            "Flora Stile Infinito";
 
         $phone = $this->normalizeItalianPhone((string) ($appointment->client?->phone ?? ''));
 
@@ -33,22 +34,23 @@ class WhatsAppService
 
     public function sendAppointmentReminder(Appointment $appointment): string
     {
-        $appointment->loadMissing(['client', 'dog', 'services']);
+        $appointment->loadMissing(['client', 'staff', 'services']);
 
         $clientName = trim((string) ($appointment->client?->first_name ?? ''));
         if ($clientName === '') {
             $clientName = trim((string) ($appointment->client?->last_name ?? ''));
         }
 
-        $dogName = trim((string) ($appointment->dog?->name ?? ''));
+        $staffText = $this->formatStaffText($appointment);
         $whenText = $this->formatWhenText($appointment->scheduled_at);
         $servicesText = $this->formatServicesText($appointment);
 
         $message = "Ciao {$clientName},\n" .
-            "ti ricordiamo l'appuntamento per {$dogName}\n" .
+            "ti ricordiamo il tuo appuntamento\n" .
+            $staffText .
             $servicesText .
             "{$whenText}.\n" .
-            "ZagaDogs";
+            "Flora Stile Infinito";
 
         $phone = $this->normalizeItalianPhone((string) ($appointment->client?->phone ?? ''));
 
@@ -92,6 +94,14 @@ class WhatsAppService
         }
 
         return $digits;
+    }
+
+    private function formatStaffText(Appointment $appointment): string
+    {
+        $staffName = trim((string) ($appointment->staff?->name ?? ''));
+
+        return $staffName !== '' ? "Con: {$staffName}
+" : '';
     }
 
     private function formatServicesText(Appointment $appointment): string

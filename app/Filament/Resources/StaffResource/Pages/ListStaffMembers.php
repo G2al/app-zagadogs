@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\DogResource\Pages;
+namespace App\Filament\Resources\StaffResource\Pages;
 
-use App\Filament\Resources\DogResource;
+use App\Filament\Resources\StaffResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListDogs extends ListRecords
+class ListStaffMembers extends ListRecords
 {
-    protected static string $resource = DogResource::class;
+    protected static string $resource = StaffResource::class;
 
     protected function getHeaderActions(): array
     {

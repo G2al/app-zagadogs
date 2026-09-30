@@ -16,7 +16,7 @@ class AdminUserSeeder extends Seeder
     {
         User::updateOrCreate(
             [
-                'email' => 'admin@zagadogs.test',
+                'email' => 'admin@florastileinfinito.test',
             ],
             [
                 'name' => 'Admin',

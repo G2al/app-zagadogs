@@ -30,7 +30,7 @@ class AppointmentsToSchedule extends TableWidget
             ->query(
                 Appointment::query()
                     ->pending()
-                    ->with(['client', 'dog'])
+                    ->with(['client', 'staff'])
                     ->latest()
             )
             ->columns([
@@ -45,21 +45,9 @@ class AppointmentsToSchedule extends TableWidget
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('dog.name')
-                    ->label('Cane')
-                    ->formatStateUsing(function (Appointment $record): string {
-                        $name = trim((string) ($record->dog?->name ?? ''));
-                        if ($name !== '') {
-                            return $name;
-                        }
-
-                        $breed = trim((string) ($record->dog?->breed ?? ''));
-                        if ($breed !== '') {
-                            return $breed;
-                        }
-
-                        return 'Senza nome';
-                    })
+                Tables\Columns\TextColumn::make('staff.name')
+                    ->label('Staff')
+                    ->placeholder('-')
                     ->searchable()
                     ->sortable(),
 
@@ -98,7 +86,7 @@ class AppointmentsToSchedule extends TableWidget
                             'whatsapp_sent' => true,
                         ]);
 
-                        $record->refresh()->loadMissing(['client', 'dog']);
+                        $record->refresh()->loadMissing(['client', 'staff']);
 
                         $url = $whatsAppService->sendAppointmentConfirmation($record);
 

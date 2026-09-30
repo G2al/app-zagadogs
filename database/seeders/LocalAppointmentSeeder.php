@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Appointment;
 use App\Models\Client;
-use App\Models\Dog;
+use App\Models\Staff;
 use App\Models\Service;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
@@ -23,32 +23,15 @@ class LocalAppointmentSeeder extends Seeder
         $faker = Faker::create('it_IT');
 
         $services = $this->services();
-        $dogs = collect();
+        $staff = $this->staff();
+        $clients = collect();
 
         for ($i = 0; $i < 50; $i++) {
-            $client = Client::create([
+            $clients->push(Client::create([
                 'first_name' => $faker->firstName(),
                 'last_name' => $faker->lastName(),
                 'phone' => $this->uniquePhone($faker),
                 'notes' => $faker->optional(0.35)->sentence(),
-            ]);
-
-            $dogs->push(Dog::create([
-                'client_id' => $client->id,
-                'name' => $faker->firstName(),
-                'breed' => $faker->randomElement([
-                    'Labrador Retriever',
-                    'Golden Retriever',
-                    'Barboncino',
-                    'Bulldog Francese',
-                    'Pastore Tedesco',
-                    'Beagle',
-                    'Border Collie',
-                    'Jack Russell Terrier',
-                    'Cocker Spaniel',
-                    'Meticcio',
-                ]),
-                'details' => $faker->optional(0.4)->sentence(),
             ]));
         }
 
@@ -60,12 +43,12 @@ class LocalAppointmentSeeder extends Seeder
             $slots = $this->dailySlots($day, self::MIN_APPOINTMENTS_PER_DAY);
 
             foreach ($slots as $scheduledAt) {
-                /** @var Dog $dog */
-                $dog = $dogs->random();
+                /** @var Client $client */
+                $client = $clients->random();
 
                 $appointment = Appointment::create([
-                    'client_id' => $dog->client_id,
-                    'dog_id' => $dog->id,
+                    'client_id' => $client->id,
+                    'staff_id' => $staff->random()->id,
                     'scheduled_at' => $scheduledAt,
                     'notes' => $faker->optional(0.45)->sentence(),
                     'status' => $faker->randomElement($statuses),
@@ -88,17 +71,23 @@ class LocalAppointmentSeeder extends Seeder
         return $phone;
     }
 
+    private function staff(): Collection
+    {
+        return collect(['Giulia', 'Martina', 'Sara'])
+            ->map(fn (string $name): Staff => Staff::firstOrCreate(['name' => $name]));
+    }
+
     private function services(): Collection
     {
         return collect([
-            ['name' => 'Bagno', 'color' => '#2563eb'],
-            ['name' => 'Toelettatura completa', 'color' => '#16a34a'],
-            ['name' => 'Taglio unghie', 'color' => '#f59e0b'],
-            ['name' => 'Stripping', 'color' => '#dc2626'],
-            ['name' => 'Snodatura', 'color' => '#7c3aed'],
+            ['name' => 'Manicure', 'color' => '#db2777', 'duration_minutes' => 45],
+            ['name' => 'Pedicure', 'color' => '#7c3aed', 'duration_minutes' => 60],
+            ['name' => 'Pulizia viso', 'color' => '#16a34a', 'duration_minutes' => 60],
+            ['name' => 'Massaggio', 'color' => '#2563eb', 'duration_minutes' => 50],
+            ['name' => 'Ceretta', 'color' => '#f59e0b', 'duration_minutes' => 30],
         ])->map(fn (array $service): Service => Service::firstOrCreate(
             ['name' => $service['name']],
-            ['color' => $service['color']]
+            ['color' => $service['color'], 'duration_minutes' => $service['duration_minutes']]
         ));
     }
 

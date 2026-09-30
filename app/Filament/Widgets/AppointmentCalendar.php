@@ -4,12 +4,10 @@ namespace App\Filament\Widgets;
 
 use App\Models\Appointment;
 use App\Models\Client;
-use App\Models\Dog;
 use App\Services\WhatsAppService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Saade\FilamentFullCalendar\Actions\EditAction;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
@@ -91,7 +89,6 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->preload()
                 ->required()
                 ->reactive()
-                ->afterStateUpdated(fn (callable $set) => $set('dog_id', null))
                 ->createOptionForm([
                     Forms\Components\TextInput::make('first_name')
                         ->label('Nome')
@@ -120,47 +117,18 @@ class AppointmentCalendar extends FullCalendarWidget
                     return filled($phone) ? (string) $phone : '-';
                 }),
 
-            Forms\Components\Select::make('dog_id')
-                ->label('Cane')
-                ->relationship(
-                    'dog',
-                    'name',
-                    modifyQueryUsing: fn (Builder $query, callable $get) => $query->where('client_id', $get('client_id'))
-                )
-                ->getOptionLabelFromRecordUsing(function (Dog $record): string {
-                    $name = trim((string) ($record->name ?? ''));
-                    if ($name !== '') {
-                        return $name;
-                    }
-
-                    $breed = trim((string) ($record->breed ?? ''));
-                    if ($breed !== '') {
-                        return $breed;
-                    }
-
-                    return 'Senza nome';
-                })
+            Forms\Components\Select::make('staff_id')
+                ->label('Staff')
+                ->relationship('staff', 'name')
                 ->searchable()
                 ->preload()
                 ->required()
-                ->disabled(fn (callable $get) => blank($get('client_id')))
-                ->reactive()
                 ->createOptionForm([
                     Forms\Components\TextInput::make('name')
-                        ->label('Nome cane')
+                        ->label('Nome')
+                        ->required()
                         ->maxLength(255),
-                    Forms\Components\TextInput::make('breed')
-                        ->label('Razza')
-                        ->maxLength(255),
-                    Forms\Components\Textarea::make('details')
-                        ->label('Dettagli particolari')
-                        ->columnSpanFull(),
-                ])
-                ->createOptionUsing(function (array $data, callable $get): int {
-                    $data['client_id'] = $get('client_id');
-
-                    return Dog::query()->create($data)->getKey();
-                }),
+                ]),
 
             Forms\Components\Select::make('services')
                 ->label('Servizi')
@@ -278,7 +246,7 @@ class AppointmentCalendar extends FullCalendarWidget
         $appointmentsCollection = Appointment::query()
             ->where('status', 'confirmed')
             ->whereNotNull('scheduled_at')
-            ->with(['client', 'dog', 'services'])
+            ->with(['client', 'staff', 'services'])
             ->get()
             ->sortBy(fn (Appointment $appointment) => $appointment->scheduled_at?->timestamp ?? 0)
             ->values();
@@ -298,12 +266,6 @@ class AppointmentCalendar extends FullCalendarWidget
                 $clientName = trim($lastName . ' ' . $firstName);
 
                 if ($clientName === '') {
-                    $dogName = trim((string) ($appointment->dog?->name ?? ''));
-                    $dogBreed = trim((string) ($appointment->dog?->breed ?? ''));
-                    $clientName = $dogName !== '' ? $dogName : $dogBreed;
-                }
-
-                if ($clientName === '') {
                     $clientName = 'Appuntamento';
                 }
 
@@ -321,7 +283,7 @@ class AppointmentCalendar extends FullCalendarWidget
 
                 $serviceColor = $serviceColors->first();
                 $serviceLabel = $serviceNames->implode(' + ');
-                $dogBreed = trim((string) ($appointment->dog?->breed ?? ''));
+                $staffName = trim((string) ($appointment->staff?->name ?? ''));
 
                 $stackKey = $appointment->scheduled_at->format('Y-m-d H:i');
                 $stackIndex = $stackCursor[$stackKey] ?? 0;
@@ -330,12 +292,12 @@ class AppointmentCalendar extends FullCalendarWidget
                     'id'    => $appointment->id,
                     'title' => $clientName,
                     'start' => $appointment->scheduled_at->toIso8601String(),
-                    'end' => $appointment->scheduled_at->copy()->addMinutes(30)->toIso8601String(),
+                    'end' => $appointment->scheduled_at->copy()->addMinutes($appointment->durationMinutes())->toIso8601String(),
                     'displayTime' => $appointment->scheduled_at->format('H:i'),
                     'backgroundColor' => $serviceColor ?: '#16a34a',
                     'borderColor' => $serviceColor ?: '#16a34a',
                     'serviceLabel' => $serviceLabel,
-                    'dogBreed' => $dogBreed,
+                    'staffName' => $staffName,
                     'stackIndex' => $stackIndex,
                     'stackCount' => $stackCounts->get($stackKey, 1),
                     'stackGlobalMax' => $stackGlobalMax,
@@ -418,7 +380,7 @@ class AppointmentCalendar extends FullCalendarWidget
         return <<<'JS'
             function(info) {
                 const el = info.el;
-                const dogBreed = info.event.extendedProps?.dogBreed || '';
+                const staffName = info.event.extendedProps?.staffName || '';
                 const isDayView = info.view?.type === 'dayGridDay';
                 const isAppointment = info.event.display !== 'background';
                 const bg = info.event.backgroundColor || '#16a34a';
@@ -430,58 +392,58 @@ class AppointmentCalendar extends FullCalendarWidget
                 el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.2)';
                 el.style.position = 'relative';
 
-                if (isDayView && isAppointment && dogBreed) {
-                    el.dataset.zagaDogBreed = dogBreed;
+                if (isDayView && isAppointment && staffName) {
+                    el.dataset.staffName = staffName;
                     el.style.paddingRight = '35%';
 
-                    const breedBadge = document.createElement('div');
-                    breedBadge.textContent = dogBreed;
-                    breedBadge.style.position = 'absolute';
-                    breedBadge.style.right = '10px';
-                    breedBadge.style.bottom = '6px';
-                    breedBadge.style.maxWidth = '32%';
-                    breedBadge.style.overflow = 'hidden';
-                    breedBadge.style.textOverflow = 'ellipsis';
-                    breedBadge.style.whiteSpace = 'nowrap';
-                    breedBadge.style.textAlign = 'right';
-                    breedBadge.style.fontSize = '14.5px';
-                    breedBadge.style.fontWeight = '700';
-                    breedBadge.style.lineHeight = '1.1';
-                    breedBadge.style.pointerEvents = 'none';
-                    breedBadge.style.zIndex = '2';
-                    el.appendChild(breedBadge);
+                    const staffBadge = document.createElement('div');
+                    staffBadge.textContent = staffName;
+                    staffBadge.style.position = 'absolute';
+                    staffBadge.style.right = '10px';
+                    staffBadge.style.bottom = '6px';
+                    staffBadge.style.maxWidth = '32%';
+                    staffBadge.style.overflow = 'hidden';
+                    staffBadge.style.textOverflow = 'ellipsis';
+                    staffBadge.style.whiteSpace = 'nowrap';
+                    staffBadge.style.textAlign = 'right';
+                    staffBadge.style.fontSize = '14.5px';
+                    staffBadge.style.fontWeight = '700';
+                    staffBadge.style.lineHeight = '1.1';
+                    staffBadge.style.pointerEvents = 'none';
+                    staffBadge.style.zIndex = '2';
+                    el.appendChild(staffBadge);
                 }
 
-                const pushBreedStats = () => {
+                const pushStaffStats = () => {
                     const calendarEl = el.closest('.filament-fullcalendar');
-                    const breedCounts = {};
+                    const staffCounts = {};
 
                     if (isDayView && calendarEl) {
-                        calendarEl.querySelectorAll('.fc-event[data-zaga-dog-breed]').forEach((eventEl) => {
-                            const breed = eventEl.dataset.zagaDogBreed || '';
+                        calendarEl.querySelectorAll('.fc-event[data-staff-name]').forEach((eventEl) => {
+                            const staff = eventEl.dataset.staffName || '';
 
-                            if (breed) {
-                                breedCounts[breed] = (breedCounts[breed] || 0) + 1;
+                            if (staff) {
+                                staffCounts[staff] = (staffCounts[staff] || 0) + 1;
                             }
                         });
                     }
 
-                    const breedStats = Object.entries(breedCounts)
-                        .sort(([breedA], [breedB]) => breedA.localeCompare(breedB))
-                        .map(([breed, count]) => ({ breed, count }));
+                    const staffStats = Object.entries(staffCounts)
+                        .sort(([staffA], [staffB]) => staffA.localeCompare(staffB))
+                        .map(([staff, count]) => ({ staff, count }));
 
-                    window.dispatchEvent(new CustomEvent('zaga-calendar-breed-stats', {
+                    window.dispatchEvent(new CustomEvent('calendar-staff-stats', {
                         detail: {
                             isDayView,
                             calendarDay: isDayView && info.view?.currentStart
                                 ? info.view.currentStart.toLocaleDateString('it-IT')
                                 : '',
-                            breedStats,
+                            staffStats,
                         },
                     }));
                 };
 
-                requestAnimationFrame(pushBreedStats);
+                requestAnimationFrame(pushStaffStats);
 
                 if (!el.classList.contains('fc-timegrid-event')) {
                     return;
@@ -547,29 +509,29 @@ class AppointmentCalendar extends FullCalendarWidget
                 requestAnimationFrame(() => {
                     const isDayView = info.view?.type === 'dayGridDay';
                     const calendarEl = document.querySelector('.filament-fullcalendar');
-                    const breedCounts = {};
+                    const staffCounts = {};
 
                     if (isDayView && calendarEl) {
-                        calendarEl.querySelectorAll('.fc-event[data-zaga-dog-breed]').forEach((eventEl) => {
-                            const breed = eventEl.dataset.zagaDogBreed || '';
+                        calendarEl.querySelectorAll('.fc-event[data-staff-name]').forEach((eventEl) => {
+                            const staff = eventEl.dataset.staffName || '';
 
-                            if (breed) {
-                                breedCounts[breed] = (breedCounts[breed] || 0) + 1;
+                            if (staff) {
+                                staffCounts[staff] = (staffCounts[staff] || 0) + 1;
                             }
                         });
                     }
 
-                    const breedStats = Object.entries(breedCounts)
-                        .sort(([breedA], [breedB]) => breedA.localeCompare(breedB))
-                        .map(([breed, count]) => ({ breed, count }));
+                    const staffStats = Object.entries(staffCounts)
+                        .sort(([staffA], [staffB]) => staffA.localeCompare(staffB))
+                        .map(([staff, count]) => ({ staff, count }));
 
-                    window.dispatchEvent(new CustomEvent('zaga-calendar-breed-stats', {
+                    window.dispatchEvent(new CustomEvent('calendar-staff-stats', {
                         detail: {
                             isDayView,
                             calendarDay: isDayView && info.view?.currentStart
                                 ? info.view.currentStart.toLocaleDateString('it-IT')
                                 : '',
-                            breedStats,
+                            staffStats,
                         },
                     }));
                 });

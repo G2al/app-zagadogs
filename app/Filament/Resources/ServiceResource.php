@@ -27,6 +27,15 @@ class ServiceResource extends Resource
                     ->label('Nome servizio')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\TextInput::make('duration_minutes')
+                    ->label('Durata (minuti)')
+                    ->numeric()
+                    ->integer()
+                    ->minValue(5)
+                    ->maxValue(720)
+                    ->step(5)
+                    ->default(30)
+                    ->required(),
                 Forms\Components\ColorPicker::make('color')
                     ->label('Colore')
                     ->default('#16a34a'),
@@ -40,6 +49,10 @@ class ServiceResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Servizio')
                     ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('duration_minutes')
+                    ->label('Durata')
+                    ->suffix(' min')
                     ->sortable(),
                 Tables\Columns\ColorColumn::make('color')
                     ->label('Colore'),

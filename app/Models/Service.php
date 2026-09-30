@@ -12,6 +12,7 @@ class Service extends Model
     protected $fillable = [
         'name',
         'color',
+        'duration_minutes',
     ];
 
     public function appointments()

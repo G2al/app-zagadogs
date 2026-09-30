@@ -6,26 +6,26 @@
     <x-filament::section>
         <div
             class="mb-4 flex gap-3 overflow-x-auto pb-1"
-            x-data="{ isDayView: false, calendarDay: '', breedStats: [] }"
+            x-data="{ isDayView: false, calendarDay: '', staffStats: [] }"
             x-show="isDayView"
             x-cloak
-            @zaga-calendar-breed-stats.window="
+            @calendar-staff-stats.window="
                 isDayView = $event.detail.isDayView;
                 calendarDay = $event.detail.calendarDay;
-                breedStats = $event.detail.breedStats;
+                staffStats = $event.detail.staffStats;
             "
         >
-            <template x-for="breedStat in breedStats" :key="breedStat.breed">
+            <template x-for="staffStat in staffStats" :key="staffStat.staff">
                 <div class="min-w-44 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                    <div class="truncate text-sm font-medium text-gray-500 dark:text-gray-400" x-text="breedStat.breed"></div>
-                    <div class="mt-2 text-2xl font-semibold text-gray-950 dark:text-white" x-text="breedStat.count"></div>
+                    <div class="truncate text-sm font-medium text-gray-500 dark:text-gray-400" x-text="staffStat.staff"></div>
+                    <div class="mt-2 text-2xl font-semibold text-gray-950 dark:text-white" x-text="staffStat.count"></div>
                     <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Appuntamenti</div>
                 </div>
             </template>
 
-            <template x-if="isDayView && breedStats.length === 0">
+            <template x-if="isDayView && staffStats.length === 0">
                 <div class="min-w-72 shrink-0 rounded-lg border border-dashed border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                    <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Nessuna razza</div>
+                    <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Nessun appuntamento</div>
                     <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">Non ci sono appuntamenti confermati in questo giorno.</div>
                 </div>
             </template>

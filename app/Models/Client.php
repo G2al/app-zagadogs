@@ -20,11 +20,6 @@ class Client extends Model
      * Relazioni
      */
 
-    public function dogs()
-    {
-        return $this->hasMany(Dog::class);
-    }
-
     public function appointments()
     {
         return $this->hasMany(Appointment::class);

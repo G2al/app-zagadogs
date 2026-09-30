@@ -1,5 +1,5 @@
 const CACHE_VERSION = 'v15';
-const CACHE_NAME = `zagadogs-pwa-${CACHE_VERSION}`;
+const CACHE_NAME = `florastileinfinito-pwa-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME && key.startsWith('zagadogs-pwa-'))
+          .filter((key) => key !== CACHE_NAME && key.startsWith('florastileinfinito-pwa-'))
           .map((key) => caches.delete(key))
       )
     )

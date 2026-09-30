@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AppointmentResource\Pages;
 use App\Models\Appointment;
 use App\Models\Client;
-use App\Models\Dog;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -46,21 +45,12 @@ class AppointmentResource extends Resource
                     ->required()
                     ->reactive(),
 
-                Forms\Components\Select::make('dog_id')
-                    ->label('Cane')
-                    ->options(fn (callable $get) => Dog::where('client_id', $get('client_id'))
-                        ->get()
-                        ->mapWithKeys(function (Dog $dog): array {
-                            $name = trim((string) ($dog->name ?? ''));
-                            $breed = trim((string) ($dog->breed ?? ''));
-                            $label = $name !== '' ? $name : ($breed !== '' ? $breed : 'Senza nome');
-
-                            return [$dog->id => $label];
-                        })
-                        ->all())
+                Forms\Components\Select::make('staff_id')
+                    ->label('Staff')
+                    ->relationship('staff', 'name')
                     ->searchable()
-                    ->required()
-                    ->disabled(fn (callable $get) => blank($get('client_id'))),
+                    ->preload()
+                    ->required(),
 
                 Forms\Components\Select::make('services')
                     ->label('Servizi')
@@ -127,20 +117,9 @@ class AppointmentResource extends Resource
                         });
                     }),
 
-                Tables\Columns\TextColumn::make('dog.name')
-                    ->label('Cane')
-                    ->formatStateUsing(function (?string $state, Appointment $record): string {
-                        if ($state !== null && trim($state) !== '') {
-                            return trim($state);
-                        }
-
-                        $breed = trim((string) ($record->dog?->breed ?? ''));
-                        if ($breed !== '') {
-                            return $breed;
-                        }
-
-                        return 'Senza nome';
-                    })
+                Tables\Columns\TextColumn::make('staff.name')
+                    ->label('Staff')
+                    ->placeholder('-')
                     ->sortable()
                     ->searchable(),
 

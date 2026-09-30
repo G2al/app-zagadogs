@@ -12,7 +12,7 @@ class Appointment extends Model
 
     protected $fillable = [
         'client_id',
-        'dog_id',
+        'staff_id',
         'scheduled_at',
         'notes',
         'status',
@@ -33,14 +33,24 @@ class Appointment extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function dog()
+    public function staff()
     {
-        return $this->belongsTo(Dog::class);
+        return $this->belongsTo(Staff::class);
     }
 
     public function services()
     {
         return $this->belongsToMany(Service::class)->withTimestamps();
+    }
+
+    /**
+     * Durata totale in minuti: somma dei servizi scelti (30 se nessuno).
+     */
+    public function durationMinutes(): int
+    {
+        $total = (int) $this->services->sum('duration_minutes');
+
+        return $total > 0 ? $total : 30;
     }
 
     /**
