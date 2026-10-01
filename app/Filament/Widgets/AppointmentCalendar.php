@@ -174,27 +174,7 @@ class AppointmentCalendar extends FullCalendarWidget
 
                     return $data;
                 })
-                ->afterFormFilled(function () use ($action): void {
-                    $action->extraModalFooterActions([
-                        $action->makeModalSubmitAction('createAndWhatsapp', arguments: ['send_whatsapp' => true])
-                            ->label('Invia WhatsApp')
-                            ->color('success')
-                            ->icon('heroicon-o-paper-airplane'),
-                    ]);
-                })
-                ->after(function (array $arguments, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
-                    $livewire->refreshRecords();
-
-                    $sendWhatsApp = (bool) ($arguments['send_whatsapp'] ?? false);
-                    if ($sendWhatsApp && filled($record->scheduled_at)) {
-                        $record->update(['whatsapp_sent' => true]);
-
-                        $url = $whatsAppService->sendAppointmentConfirmation($record);
-                        $encodedUrl = json_encode($url);
-
-                        $livewire->js("window.location.href = {$encodedUrl};");
-                    }
-                });
+                ->after(fn ($livewire) => $livewire->refreshRecords());
 
             return;
         }

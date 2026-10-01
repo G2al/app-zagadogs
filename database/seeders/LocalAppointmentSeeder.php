@@ -20,6 +20,12 @@ class LocalAppointmentSeeder extends Seeder
      */
     public function run(): void
     {
+        // I clienti sono finti: niente conferme WhatsApp automatiche durante il seed.
+        Appointment::withoutEvents(fn () => $this->seed());
+    }
+
+    private function seed(): void
+    {
         $faker = Faker::create('it_IT');
 
         $services = $this->services();

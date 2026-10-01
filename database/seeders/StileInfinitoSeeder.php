@@ -53,6 +53,12 @@ class StileInfinitoSeeder extends Seeder
 
     public function run(): void
     {
+        // I clienti sono finti: niente conferme WhatsApp automatiche durante il seed.
+        Appointment::withoutEvents(fn () => $this->seed());
+    }
+
+    private function seed(): void
+    {
         $staff = $this->staff();
         $services = $this->services();
         $clients = $this->clients();

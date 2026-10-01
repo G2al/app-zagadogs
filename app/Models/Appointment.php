@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\AppointmentObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Service;
 
+#[ObservedBy(AppointmentObserver::class)]
 class Appointment extends Model
 {
     use HasFactory;

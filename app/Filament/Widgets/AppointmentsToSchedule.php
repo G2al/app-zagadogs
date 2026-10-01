@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Appointment;
-use App\Services\WhatsAppService;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -72,28 +71,16 @@ class AppointmentsToSchedule extends TableWidget
                             ->minDate(now()->startOfMinute())
                             ->seconds(false)
                             ->required(),
-
-                        Forms\Components\Checkbox::make('send_whatsapp')
-                            ->label('Invia conferma WhatsApp')
-                            ->accepted()
-                            ->required(),
                     ])
-                    ->action(function (array $data, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
-
+                    ->action(function (array $data, Appointment $record, $livewire): void {
+                        // Lo stato diventa "confirmed": la conferma WhatsApp parte da sola (AppointmentObserver).
                         $record->update([
                             'scheduled_at' => $data['scheduled_at'],
                             'status' => 'confirmed',
-                            'whatsapp_sent' => true,
                         ]);
-
-                        $record->refresh()->loadMissing(['client', 'staff']);
-
-                        $url = $whatsAppService->sendAppointmentConfirmation($record);
 
                         $livewire->dispatch('filament-fullcalendar--refresh');
                         $livewire->dispatch('appointments-to-schedule--refresh');
-
-                        $livewire->js('window.location.href = ' . json_encode($url));
                     }),
             ])
             ->emptyStateHeading('Nessun appuntamento da programmare');
