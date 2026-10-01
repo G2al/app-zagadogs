@@ -17,15 +17,39 @@ class AppointmentObserver
     public function created(Appointment $appointment): void
     {
         if ($appointment->status === 'confirmed') {
+            $this->planReminder($appointment);
             $this->sendConfirmationAfterResponse($appointment);
         }
     }
 
-    /** Solo se lo stato è cambiato adesso: salvare un appuntamento già confermato non reinvia nulla. */
     public function updated(Appointment $appointment): void
     {
-        if ($appointment->wasChanged('status') && $appointment->status === 'confirmed') {
+        if ($appointment->status !== 'confirmed') {
+            return;
+        }
+
+        // Solo se lo stato è cambiato adesso: salvare un appuntamento già confermato non reinvia la conferma.
+        if ($appointment->wasChanged('status')) {
             $this->sendConfirmationAfterResponse($appointment);
+        }
+
+        // Confermato adesso oppure spostato: il promemoria va (ri)pianificato.
+        if ($appointment->wasChanged(['status', 'scheduled_at'])) {
+            $this->planReminder($appointment);
+        }
+    }
+
+    /** Scrive solo una riga nel database: non può far fallire il salvataggio dell'appuntamento. */
+    private function planReminder(Appointment $appointment): void
+    {
+        try {
+            app(AppointmentWhatsAppNotifier::class)->planReminder($appointment);
+        } catch (Throwable $e) {
+            Log::error('Errore nella pianificazione del promemoria WhatsApp.', [
+                'appointment_id' => $appointment->getKey(),
+                'exception' => $e::class,
+                'detail' => $e->getMessage(),
+            ]);
         }
     }
 
