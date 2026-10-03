@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\Staff;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -89,7 +90,7 @@ class StileInfinitoSeeder extends Seeder
                 'whatsapp_sent' => $start !== null && random_int(1, 100) <= 60,
             ]);
 
-            $appointment->services()->sync($chosen->pluck('id')->all());
+            $this->syncServices($appointment, $chosen);
             $created++;
         }
 
@@ -104,21 +105,52 @@ class StileInfinitoSeeder extends Seeder
 
     private function services(): Collection
     {
+        $estetica = ServiceCategory::firstOrCreate(['name' => 'Estetica', 'parent_id' => null]);
+        $categories = [
+            'viso' => ServiceCategory::firstOrCreate(['name' => 'Viso', 'parent_id' => $estetica->id]),
+            'corpo' => ServiceCategory::firstOrCreate(['name' => 'Corpo', 'parent_id' => $estetica->id]),
+            'mani' => ServiceCategory::firstOrCreate(['name' => 'Mani e piedi', 'parent_id' => $estetica->id]),
+            'epilazione' => ServiceCategory::firstOrCreate(['name' => 'Epilazione', 'parent_id' => null]),
+            'sposa' => ServiceCategory::firstOrCreate(['name' => 'Sposa', 'parent_id' => null]),
+        ];
+
+        // La durata è facoltativa: "Trucco" non ne ha una.
         return collect([
-            ['name' => 'Epilazione laser', 'duration_minutes' => 20, 'color' => '#0ea5e9'],
-            ['name' => 'Ceretta gambe', 'duration_minutes' => 30, 'color' => '#f59e0b'],
-            ['name' => 'Trucco', 'duration_minutes' => 40, 'color' => '#ec4899'],
-            ['name' => 'Manicure', 'duration_minutes' => 45, 'color' => '#db2777'],
-            ['name' => 'Massaggio rilassante', 'duration_minutes' => 50, 'color' => '#2563eb'],
-            ['name' => 'Pedicure', 'duration_minutes' => 60, 'color' => '#7c3aed'],
-            ['name' => 'Semipermanente', 'duration_minutes' => 75, 'color' => '#14b8a6'],
-            ['name' => 'Ceretta corpo', 'duration_minutes' => 90, 'color' => '#ea580c'],
-            ['name' => 'Trattamento corpo', 'duration_minutes' => 105, 'color' => '#16a34a'],
-            ['name' => 'Pacchetto sposa', 'duration_minutes' => 120, 'color' => '#dc2626'],
+            ['name' => 'Epilazione laser', 'duration_minutes' => 20, 'price' => 40, 'category' => 'epilazione', 'color' => '#0ea5e9'],
+            ['name' => 'Ceretta gambe', 'duration_minutes' => 30, 'price' => 30, 'category' => 'epilazione', 'color' => '#f59e0b'],
+            ['name' => 'Trucco', 'duration_minutes' => null, 'price' => 35, 'category' => 'viso', 'color' => '#ec4899'],
+            ['name' => 'Manicure', 'duration_minutes' => 45, 'price' => 25, 'category' => 'mani', 'color' => '#db2777'],
+            ['name' => 'Massaggio rilassante', 'duration_minutes' => 50, 'price' => 50, 'category' => 'corpo', 'color' => '#2563eb'],
+            ['name' => 'Pedicure', 'duration_minutes' => 60, 'price' => 35, 'category' => 'mani', 'color' => '#7c3aed'],
+            ['name' => 'Semipermanente', 'duration_minutes' => 75, 'price' => 40, 'category' => 'mani', 'color' => '#14b8a6'],
+            ['name' => 'Ceretta corpo', 'duration_minutes' => 90, 'price' => 60, 'category' => 'epilazione', 'color' => '#ea580c'],
+            ['name' => 'Trattamento corpo', 'duration_minutes' => 105, 'price' => 80, 'category' => 'corpo', 'color' => '#16a34a'],
+            ['name' => 'Pacchetto sposa', 'duration_minutes' => 120, 'price' => 150, 'category' => 'sposa', 'color' => '#dc2626'],
         ])->map(fn (array $service): Service => Service::updateOrCreate(
             ['name' => $service['name']],
-            ['duration_minutes' => $service['duration_minutes'], 'color' => $service['color']]
+            [
+                'duration_minutes' => $service['duration_minutes'],
+                'price' => $service['price'],
+                'category_id' => $categories[$service['category']]->id,
+                'color' => $service['color'],
+            ]
         ));
+    }
+
+    /**
+     * Servizi dell'appuntamento: di norma al prezzo di listino, ma una volta su quattro con un prezzo diverso,
+     * come farebbe l'operatrice per una cliente di riguardo.
+     */
+    private function syncServices(Appointment $appointment, Collection $chosen): void
+    {
+        $appointment->services()->sync(
+            $chosen->mapWithKeys(fn (Service $service): array => [
+                // Durante il seed gli eventi dei model sono spenti: il prezzo di listino va quindi scritto qui.
+                $service->id => ['price' => random_int(1, 100) <= 25 && $service->price !== null
+                    ? max(0, (float) $service->price - [5, 10, 15][array_rand([5, 10, 15])])
+                    : $service->price],
+            ])->all()
+        );
     }
 
     private function clients(): Collection

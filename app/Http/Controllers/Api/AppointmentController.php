@@ -100,6 +100,9 @@ class AppointmentController extends Controller
             'staff_id' => ['required', 'integer', 'exists:staff,id'],
             'service_ids' => ['nullable', 'array'],
             'service_ids.*' => ['integer', 'exists:services,id'],
+            'services' => ['nullable', 'array'],
+            'services.*.id' => ['required', 'integer', 'exists:services,id'],
+            'services.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'scheduled_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(self::STATUSES)],
@@ -124,7 +127,7 @@ class AppointmentController extends Controller
                 'status' => $data['status'] ?? ($scheduledAt ? 'confirmed' : 'pending'),
             ]);
 
-            $appointment->services()->sync($data['service_ids'] ?? []);
+            $appointment->services()->sync($this->servicesPayload($data) ?? []);
 
             return $appointment;
         });
@@ -146,6 +149,9 @@ class AppointmentController extends Controller
             'staff_id' => ['sometimes', 'required', 'integer', 'exists:staff,id'],
             'service_ids' => ['sometimes', 'array'],
             'service_ids.*' => ['integer', 'exists:services,id'],
+            'services' => ['sometimes', 'array'],
+            'services.*.id' => ['required', 'integer', 'exists:services,id'],
+            'services.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'scheduled_at' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', Rule::in(self::STATUSES)],
@@ -165,8 +171,10 @@ class AppointmentController extends Controller
 
             $appointment->update($attributes);
 
-            if (array_key_exists('service_ids', $data)) {
-                $appointment->services()->sync($data['service_ids']);
+            $services = $this->servicesPayload($data);
+
+            if ($services !== null) {
+                $appointment->services()->sync($services);
             }
         });
 
@@ -197,6 +205,30 @@ class AppointmentController extends Controller
             : $whatsApp->sendAppointmentReminder($appointment);
 
         return response()->json(['url' => $url]);
+    }
+
+    /**
+     * Servizi dell'appuntamento nel formato di sync(): [id => ['price' => x]], oppure null se la richiesta non li tocca.
+     *
+     * - `services: [{id, price?}]` imposta anche il prezzo applicato (diverso dal listino, se serve);
+     * - `service_ids: [id, ...]` (formato semplice) non indica prezzi.
+     * Per un servizio nuovo senza prezzo si copia il listino; per uno già presente il prezzo resta quello che aveva.
+     */
+    private function servicesPayload(array $data): ?array
+    {
+        if (array_key_exists('services', $data)) {
+            return collect($data['services'])
+                ->mapWithKeys(fn (array $service) => [
+                    (int) $service['id'] => isset($service['price']) ? ['price' => $service['price']] : [],
+                ])
+                ->all();
+        }
+
+        if (array_key_exists('service_ids', $data)) {
+            return collect($data['service_ids'])->mapWithKeys(fn ($id) => [(int) $id => []])->all();
+        }
+
+        return null;
     }
 
     private function toAppTimezone(?string $value): ?Carbon

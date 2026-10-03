@@ -21,7 +21,10 @@ class AppointmentResource extends JsonResource
             'staff_id' => $this->staff_id,
             'client' => new ClientResource($this->whenLoaded('client')),
             'staff' => new StaffResource($this->whenLoaded('staff')),
-            'services' => ServiceResource::collection($this->whenLoaded('services')),
+            'services' => AppointmentServiceResource::collection($this->whenLoaded('services')),
+            // Somma dei prezzi applicati ai servizi; i servizi senza prezzo contano zero (vedi unpriced_services).
+            'total_price' => $this->whenLoaded('services', fn () => $this->totalPrice()),
+            'unpriced_services' => $this->whenLoaded('services', fn () => $this->unpricedServicesCount()),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

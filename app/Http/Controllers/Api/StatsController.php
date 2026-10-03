@@ -155,7 +155,7 @@ class StatsController extends Controller
             'color' => $service->color,
             'duration_minutes' => $service->duration_minutes,
             'count' => $counts[$service->id] ?? 0,
-            'minutes' => ($counts[$service->id] ?? 0) * $service->duration_minutes,
+            'minutes' => ($counts[$service->id] ?? 0) * ($service->duration_minutes ?? 0),
         ])->sortByDesc('count')->values()->all();
     }
 

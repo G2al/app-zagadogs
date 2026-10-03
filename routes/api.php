@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ClientSummaryController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ServiceCategoryController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\StaffController;
@@ -18,7 +20,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', DashboardController::class);
     Route::get('/stats', StatsController::class);
 
+    Route::get('/clients/{client}/summary', ClientSummaryController::class);
     Route::apiResource('clients', ClientController::class);
+    Route::apiResource('service-categories', ServiceCategoryController::class);
     Route::apiResource('services', ServiceController::class);
     Route::apiResource('staff', StaffController::class)->parameters(['staff' => 'staff']);
 

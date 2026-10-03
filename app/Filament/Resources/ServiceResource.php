@@ -27,15 +27,27 @@ class ServiceResource extends Resource
                     ->label('Nome servizio')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Select::make('category_id')
+                    ->label('Categoria')
+                    ->relationship('category', 'name')
+                    ->getOptionLabelFromRecordUsing(fn (\App\Models\ServiceCategory $record): string => $record->path())
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\TextInput::make('price')
+                    ->label('Prezzo di listino')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(99999.99)
+                    ->prefix('€')
+                    ->helperText('Il prezzo si può cambiare su ogni singolo appuntamento.'),
                 Forms\Components\TextInput::make('duration_minutes')
                     ->label('Durata (minuti)')
+                    ->helperText("Facoltativa: se vuota, l'appuntamento usa la durata predefinita.")
                     ->numeric()
                     ->integer()
                     ->minValue(5)
                     ->maxValue(720)
-                    ->step(5)
-                    ->default(30)
-                    ->required(),
+                    ->step(5),
                 Forms\Components\ColorPicker::make('color')
                     ->label('Colore')
                     ->default('#16a34a'),
@@ -50,9 +62,19 @@ class ServiceResource extends Resource
                     ->label('Servizio')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Categoria')
+                    ->placeholder('-')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Prezzo')
+                    ->money('EUR')
+                    ->placeholder('-')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('duration_minutes')
                     ->label('Durata')
                     ->suffix(' min')
+                    ->placeholder('-')
                     ->sortable(),
                 Tables\Columns\ColorColumn::make('color')
                     ->label('Colore'),

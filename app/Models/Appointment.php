@@ -43,17 +43,35 @@ class Appointment extends Model
 
     public function services()
     {
-        return $this->belongsToMany(Service::class)->withTimestamps();
+        return $this->belongsToMany(Service::class)
+            ->using(AppointmentService::class)
+            ->withPivot('price')
+            ->withTimestamps();
     }
 
+    public const DEFAULT_DURATION_MINUTES = 30;
+
     /**
-     * Durata totale in minuti: somma dei servizi scelti (30 se nessuno).
+     * Durata totale in minuti: somma dei servizi scelti che hanno una durata.
+     * Se nessun servizio ne ha una (la durata è facoltativa) vale il predefinito.
      */
     public function durationMinutes(): int
     {
         $total = (int) $this->services->sum('duration_minutes');
 
-        return $total > 0 ? $total : 30;
+        return $total > 0 ? $total : self::DEFAULT_DURATION_MINUTES;
+    }
+
+    /** Totale in euro: somma dei prezzi applicati ai servizi (quelli senza prezzo contano zero). */
+    public function totalPrice(): float
+    {
+        return round((float) $this->services->sum(fn (Service $service) => (float) $service->pivot->price), 2);
+    }
+
+    /** Quanti servizi non hanno un prezzo, per segnalare un totale incompleto. */
+    public function unpricedServicesCount(): int
+    {
+        return $this->services->filter(fn (Service $service) => $service->pivot->price === null)->count();
     }
 
     /**
