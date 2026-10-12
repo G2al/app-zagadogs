@@ -42,7 +42,7 @@ class ServiceResource extends Resource
                     ->helperText('Il prezzo si può cambiare su ogni singolo appuntamento.'),
                 Forms\Components\TextInput::make('duration_minutes')
                     ->label('Durata (minuti)')
-                    ->helperText("Facoltativa: se vuota, l'appuntamento usa la durata predefinita.")
+                    ->helperText("Facoltativa: se nessun servizio dell'appuntamento ha una durata, l'appuntamento dura 0 minuti.")
                     ->numeric()
                     ->integer()
                     ->minValue(5)

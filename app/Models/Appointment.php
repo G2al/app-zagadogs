@@ -49,11 +49,16 @@ class Appointment extends Model
             ->withTimestamps();
     }
 
-    public const DEFAULT_DURATION_MINUTES = 30;
+    /** Durata di un appuntamento i cui servizi non hanno una durata: nessuna (0 minuti). */
+    public const DEFAULT_DURATION_MINUTES = 0;
+
+    /** Solo per disegnare i blocchi nel calendario Filament: un appuntamento lungo 0 minuti non si vedrebbe. */
+    public const MIN_CALENDAR_BLOCK_MINUTES = 30;
 
     /**
      * Durata totale in minuti: somma dei servizi scelti che hanno una durata.
-     * Se nessun servizio ne ha una (la durata è facoltativa) vale il predefinito.
+     * La durata dei servizi è facoltativa: se nessuno ne ha una, l'appuntamento dura 0 minuti
+     * (ends_at coincide con scheduled_at).
      */
     public function durationMinutes(): int
     {

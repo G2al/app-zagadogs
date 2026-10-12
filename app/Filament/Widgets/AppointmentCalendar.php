@@ -272,7 +272,8 @@ class AppointmentCalendar extends FullCalendarWidget
                     'id'    => $appointment->id,
                     'title' => $clientName,
                     'start' => $appointment->scheduled_at->toIso8601String(),
-                    'end' => $appointment->scheduled_at->copy()->addMinutes($appointment->durationMinutes())->toIso8601String(),
+                    // Senza durata il blocco avrebbe altezza zero: nel calendario se ne disegna uno minimo (solo grafica).
+                    'end' => $appointment->scheduled_at->copy()->addMinutes(max($appointment->durationMinutes(), Appointment::MIN_CALENDAR_BLOCK_MINUTES))->toIso8601String(),
                     'displayTime' => $appointment->scheduled_at->format('H:i'),
                     'backgroundColor' => $serviceColor ?: '#16a34a',
                     'borderColor' => $serviceColor ?: '#16a34a',
