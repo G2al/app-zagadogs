@@ -8,36 +8,29 @@ use PHPUnit\Framework\TestCase;
 
 class AppointmentDurationTest extends TestCase
 {
-    /** @param  array<int, int|null>  $durations */
-    private function appointmentWith(array $durations): Appointment
+    public function test_senza_durata_vale_zero(): void
     {
-        $appointment = new Appointment();
-        $appointment->setRelation('services', collect(array_map(
-            fn (?int $minutes) => new Service(['duration_minutes' => $minutes]),
-            $durations,
-        )));
-
-        return $appointment;
+        $this->assertSame(0, (new Appointment())->durationMinutes());
+        $this->assertSame(0, (new Appointment(['duration_minutes' => null]))->durationMinutes());
     }
 
-    public function test_senza_servizi_dura_zero(): void
+    public function test_la_durata_e_quella_dell_appuntamento(): void
     {
-        $this->assertSame(0, $this->appointmentWith([])->durationMinutes());
+        $this->assertSame(45, (new Appointment(['duration_minutes' => 45]))->durationMinutes());
+        $this->assertSame(30, (new Appointment(['duration_minutes' => 30]))->durationMinutes());
     }
 
-    public function test_servizi_senza_durata_danno_zero(): void
+    public function test_la_durata_dei_servizi_non_conta(): void
     {
-        $this->assertSame(0, $this->appointmentWith([null, null])->durationMinutes());
-    }
+        $appointment = new Appointment(['duration_minutes' => null]);
+        $appointment->setRelation('services', collect([
+            new Service(['duration_minutes' => 60]),
+            new Service(['duration_minutes' => 45]),
+        ]));
 
-    public function test_somma_solo_le_durate_presenti(): void
-    {
-        $this->assertSame(45, $this->appointmentWith([null, 45])->durationMinutes());
-        $this->assertSame(105, $this->appointmentWith([45, 60, null])->durationMinutes());
-    }
+        $this->assertSame(0, $appointment->durationMinutes());
 
-    public function test_un_servizio_da_30_minuti_resta_30(): void
-    {
-        $this->assertSame(30, $this->appointmentWith([30])->durationMinutes());
+        $appointment->duration_minutes = 20;
+        $this->assertSame(20, $appointment->durationMinutes());
     }
 }

@@ -71,7 +71,9 @@ class StileInfinitoSeeder extends Seeder
 
         for ($i = 0; $i < self::APPOINTMENTS; $i++) {
             $chosen = $services->random(random_int(1, 3));
-            $duration = max(30, (int) $chosen->sum('duration_minutes'));
+            // La durata è dell'appuntamento (facoltativa): una volta su cinque non viene specificata.
+            $appointmentDuration = random_int(1, 100) <= 20 ? null : [15, 30, 45, 60, 75, 90, 120][array_rand([15, 30, 45, 60, 75, 90, 120])];
+            $duration = max(30, (int) $appointmentDuration); // solo per evitare sovrapposizioni tra gli orari generati
             $operator = $staff->random();
 
             $unscheduled = $i < self::UNSCHEDULED;
@@ -85,6 +87,7 @@ class StileInfinitoSeeder extends Seeder
                 'client_id' => $clients->random()->id,
                 'staff_id' => $operator->id,
                 'scheduled_at' => $start?->copy()->setTimezone('UTC'),
+                'duration_minutes' => $appointmentDuration,
                 'notes' => random_int(1, 100) <= 40 ? self::NOTES[array_rand(self::NOTES)] : null,
                 'status' => $this->status($start),
                 'whatsapp_sent' => $start !== null && random_int(1, 100) <= 60,
@@ -114,18 +117,18 @@ class StileInfinitoSeeder extends Seeder
             'sposa' => ServiceCategory::firstOrCreate(['name' => 'Sposa', 'parent_id' => null]),
         ];
 
-        // La durata è facoltativa: "Trucco" non ne ha una.
+        // La durata non è più un dato del servizio (sta sull'appuntamento): i servizi non ne hanno una.
         return collect([
-            ['name' => 'Epilazione laser', 'duration_minutes' => 20, 'price' => 40, 'category' => 'epilazione', 'color' => '#0ea5e9'],
-            ['name' => 'Ceretta gambe', 'duration_minutes' => 30, 'price' => 30, 'category' => 'epilazione', 'color' => '#f59e0b'],
+            ['name' => 'Epilazione laser', 'duration_minutes' => null, 'price' => 40, 'category' => 'epilazione', 'color' => '#0ea5e9'],
+            ['name' => 'Ceretta gambe', 'duration_minutes' => null, 'price' => 30, 'category' => 'epilazione', 'color' => '#f59e0b'],
             ['name' => 'Trucco', 'duration_minutes' => null, 'price' => 35, 'category' => 'viso', 'color' => '#ec4899'],
-            ['name' => 'Manicure', 'duration_minutes' => 45, 'price' => 25, 'category' => 'mani', 'color' => '#db2777'],
-            ['name' => 'Massaggio rilassante', 'duration_minutes' => 50, 'price' => 50, 'category' => 'corpo', 'color' => '#2563eb'],
-            ['name' => 'Pedicure', 'duration_minutes' => 60, 'price' => 35, 'category' => 'mani', 'color' => '#7c3aed'],
-            ['name' => 'Semipermanente', 'duration_minutes' => 75, 'price' => 40, 'category' => 'mani', 'color' => '#14b8a6'],
-            ['name' => 'Ceretta corpo', 'duration_minutes' => 90, 'price' => 60, 'category' => 'epilazione', 'color' => '#ea580c'],
-            ['name' => 'Trattamento corpo', 'duration_minutes' => 105, 'price' => 80, 'category' => 'corpo', 'color' => '#16a34a'],
-            ['name' => 'Pacchetto sposa', 'duration_minutes' => 120, 'price' => 150, 'category' => 'sposa', 'color' => '#dc2626'],
+            ['name' => 'Manicure', 'duration_minutes' => null, 'price' => 25, 'category' => 'mani', 'color' => '#db2777'],
+            ['name' => 'Massaggio rilassante', 'duration_minutes' => null, 'price' => 50, 'category' => 'corpo', 'color' => '#2563eb'],
+            ['name' => 'Pedicure', 'duration_minutes' => null, 'price' => 35, 'category' => 'mani', 'color' => '#7c3aed'],
+            ['name' => 'Semipermanente', 'duration_minutes' => null, 'price' => 40, 'category' => 'mani', 'color' => '#14b8a6'],
+            ['name' => 'Ceretta corpo', 'duration_minutes' => null, 'price' => 60, 'category' => 'epilazione', 'color' => '#ea580c'],
+            ['name' => 'Trattamento corpo', 'duration_minutes' => null, 'price' => 80, 'category' => 'corpo', 'color' => '#16a34a'],
+            ['name' => 'Pacchetto sposa', 'duration_minutes' => null, 'price' => 150, 'category' => 'sposa', 'color' => '#dc2626'],
         ])->map(fn (array $service): Service => Service::updateOrCreate(
             ['name' => $service['name']],
             [

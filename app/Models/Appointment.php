@@ -17,6 +17,7 @@ class Appointment extends Model
         'client_id',
         'staff_id',
         'scheduled_at',
+        'duration_minutes',
         'notes',
         'status',
         'whatsapp_sent',
@@ -49,22 +50,16 @@ class Appointment extends Model
             ->withTimestamps();
     }
 
-    /** Durata di un appuntamento i cui servizi non hanno una durata: nessuna (0 minuti). */
-    public const DEFAULT_DURATION_MINUTES = 0;
-
     /** Solo per disegnare i blocchi nel calendario Filament: un appuntamento lungo 0 minuti non si vedrebbe. */
     public const MIN_CALENDAR_BLOCK_MINUTES = 30;
 
     /**
-     * Durata totale in minuti: somma dei servizi scelti che hanno una durata.
-     * La durata dei servizi è facoltativa: se nessuno ne ha una, l'appuntamento dura 0 minuti
-     * (ends_at coincide con scheduled_at).
+     * Durata dell'appuntamento in minuti: è un dato dell'appuntamento, non dei servizi.
+     * Facoltativa: se non è specificata vale 0 e la fine (ends_at) coincide con l'inizio.
      */
     public function durationMinutes(): int
     {
-        $total = (int) $this->services->sum('duration_minutes');
-
-        return $total > 0 ? $total : self::DEFAULT_DURATION_MINUTES;
+        return max(0, (int) $this->duration_minutes);
     }
 
     /** Totale in euro: somma dei prezzi applicati ai servizi (quelli senza prezzo contano zero). */

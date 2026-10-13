@@ -138,14 +138,20 @@ class StatsController extends Controller
         })->sortByDesc('appointments')->values()->all();
     }
 
-    /** Quante volte è stato richiesto ogni servizio (un appuntamento con più servizi conta per ciascuno). */
+    /**
+     * Quante volte è stato richiesto ogni servizio (un appuntamento con più servizi conta per ciascuno).
+     * `minutes` è la durata degli appuntamenti che includono il servizio: la durata è dell'appuntamento,
+     * quindi uno con più servizi viene contato per intero su ognuno (non sommare le righe tra loro).
+     */
     private function byService(Collection $active): array
     {
         $counts = [];
+        $minutes = [];
 
         foreach ($active as $appointment) {
             foreach ($appointment->services as $service) {
                 $counts[$service->id] = ($counts[$service->id] ?? 0) + 1;
+                $minutes[$service->id] = ($minutes[$service->id] ?? 0) + $appointment->durationMinutes();
             }
         }
 
@@ -153,9 +159,8 @@ class StatsController extends Controller
             'service_id' => $service->id,
             'name' => $service->name,
             'color' => $service->color,
-            'duration_minutes' => $service->duration_minutes,
             'count' => $counts[$service->id] ?? 0,
-            'minutes' => ($counts[$service->id] ?? 0) * ($service->duration_minutes ?? 0),
+            'minutes' => $minutes[$service->id] ?? 0,
         ])->sortByDesc('count')->values()->all();
     }
 

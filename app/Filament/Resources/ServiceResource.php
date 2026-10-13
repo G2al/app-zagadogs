@@ -40,14 +40,6 @@ class ServiceResource extends Resource
                     ->maxValue(99999.99)
                     ->prefix('€')
                     ->helperText('Il prezzo si può cambiare su ogni singolo appuntamento.'),
-                Forms\Components\TextInput::make('duration_minutes')
-                    ->label('Durata (minuti)')
-                    ->helperText("Facoltativa: se nessun servizio dell'appuntamento ha una durata, l'appuntamento dura 0 minuti.")
-                    ->numeric()
-                    ->integer()
-                    ->minValue(5)
-                    ->maxValue(720)
-                    ->step(5),
                 Forms\Components\ColorPicker::make('color')
                     ->label('Colore')
                     ->default('#16a34a'),
@@ -69,11 +61,6 @@ class ServiceResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->label('Prezzo')
                     ->money('EUR')
-                    ->placeholder('-')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('duration_minutes')
-                    ->label('Durata')
-                    ->suffix(' min')
                     ->placeholder('-')
                     ->sortable(),
                 Tables\Columns\ColorColumn::make('color')

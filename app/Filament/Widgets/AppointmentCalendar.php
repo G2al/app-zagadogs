@@ -143,6 +143,15 @@ class AppointmentCalendar extends FullCalendarWidget
                 ->seconds(false)
                 ->reactive(),
 
+            Forms\Components\TextInput::make('duration_minutes')
+                ->label('Durata (minuti)')
+                ->helperText("Facoltativa: se vuota, l'appuntamento non ha una durata.")
+                ->numeric()
+                ->integer()
+                ->minValue(1)
+                ->maxValue(720)
+                ->step(5),
+
             Forms\Components\Textarea::make('notes')
                 ->label('Note')
                 ->columnSpanFull(),

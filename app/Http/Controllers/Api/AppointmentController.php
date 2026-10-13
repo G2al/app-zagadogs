@@ -104,6 +104,7 @@ class AppointmentController extends Controller
             'services.*.id' => ['required', 'integer', 'exists:services,id'],
             'services.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'scheduled_at' => ['nullable', 'date'],
+            'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:720'],
             'notes' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(self::STATUSES)],
         ]);
@@ -123,6 +124,7 @@ class AppointmentController extends Controller
                 'client_id' => $clientId,
                 'staff_id' => $data['staff_id'],
                 'scheduled_at' => $scheduledAt,
+                'duration_minutes' => $this->normalizeDuration($data['duration_minutes'] ?? null),
                 'notes' => $data['notes'] ?? null,
                 'status' => $data['status'] ?? ($scheduledAt ? 'confirmed' : 'pending'),
             ]);
@@ -153,12 +155,18 @@ class AppointmentController extends Controller
             'services.*.id' => ['required', 'integer', 'exists:services,id'],
             'services.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'scheduled_at' => ['sometimes', 'nullable', 'date'],
+            'duration_minutes' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:720'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', Rule::in(self::STATUSES)],
         ]);
 
         DB::transaction(function () use ($data, $appointment): void {
             $attributes = collect($data)->only(['client_id', 'staff_id', 'notes', 'status'])->all();
+
+            // Se il campo non c'è la durata resta quella che era; con null o 0 diventa "non specificata".
+            if (array_key_exists('duration_minutes', $data)) {
+                $attributes['duration_minutes'] = $this->normalizeDuration($data['duration_minutes']);
+            }
 
             if (array_key_exists('scheduled_at', $data)) {
                 $attributes['scheduled_at'] = $this->toAppTimezone($data['scheduled_at']);
@@ -229,6 +237,14 @@ class AppointmentController extends Controller
         }
 
         return null;
+    }
+
+    /** Durata in minuti oppure null: lo 0 (che l'API restituisce per "non specificata") equivale a null. */
+    private function normalizeDuration(mixed $value): ?int
+    {
+        $minutes = $value === null ? 0 : (int) $value;
+
+        return $minutes > 0 ? $minutes : null;
     }
 
     private function toAppTimezone(?string $value): ?Carbon
