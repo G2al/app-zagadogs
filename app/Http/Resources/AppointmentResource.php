@@ -14,6 +14,8 @@ class AppointmentResource extends JsonResource
             'scheduled_at' => $this->scheduled_at?->toIso8601String(),
             'ends_at' => $this->scheduled_at?->copy()->addMinutes($this->durationMinutes())->toIso8601String(),
             'duration_minutes' => $this->durationMinutes(),
+            // Colore con cui mostrarlo nel calendario: quello dell'operatrice.
+            'color' => $this->displayColor(),
             'status' => $this->status,
             'notes' => $this->notes,
             'whatsapp_sent' => $this->whatsapp_sent,

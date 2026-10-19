@@ -22,7 +22,7 @@ class ServiceCategoryController extends Controller
         $roots = ServiceCategory::query()
             ->whereNull('parent_id')
             ->orderBy('name')
-            ->with(['services.category', 'children.services.category'])
+            ->with(['services.category', 'services.staff', 'children.services.category', 'children.services.staff'])
             ->get();
 
         return ServiceCategoryResource::collection($roots);
@@ -44,7 +44,7 @@ class ServiceCategoryController extends Controller
 
     public function show(ServiceCategory $serviceCategory): ServiceCategoryResource
     {
-        return new ServiceCategoryResource($serviceCategory->load(['services.category', 'children.services.category']));
+        return new ServiceCategoryResource($serviceCategory->load(['services.category', 'services.staff', 'children.services.category', 'children.services.staff']));
     }
 
     public function update(Request $request, ServiceCategory $serviceCategory): ServiceCategoryResource
@@ -64,7 +64,7 @@ class ServiceCategoryController extends Controller
 
         $serviceCategory->update($data);
 
-        return new ServiceCategoryResource($serviceCategory->load(['services.category', 'children.services.category']));
+        return new ServiceCategoryResource($serviceCategory->load(['services.category', 'services.staff', 'children.services.category', 'children.services.staff']));
     }
 
     /** I servizi della categoria restano, senza categoria; le sottocategorie diventano principali. */

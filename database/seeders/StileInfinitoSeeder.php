@@ -62,6 +62,7 @@ class StileInfinitoSeeder extends Seeder
     {
         $staff = $this->staff();
         $services = $this->services();
+        $this->linkStaffToServices($services, $staff);
         $clients = $this->clients();
 
         /** @var array<int, array<int, array{0: Carbon, 1: Carbon}>> $busy occupazione per operatrice */
@@ -74,7 +75,7 @@ class StileInfinitoSeeder extends Seeder
             // La durata è dell'appuntamento (facoltativa): una volta su cinque non viene specificata.
             $appointmentDuration = random_int(1, 100) <= 20 ? null : [15, 30, 45, 60, 75, 90, 120][array_rand([15, 30, 45, 60, 75, 90, 120])];
             $duration = max(30, (int) $appointmentDuration); // solo per evitare sovrapposizioni tra gli orari generati
-            $operator = $staff->random();
+            $operator = $this->operatorFor($chosen, $staff);
 
             $unscheduled = $i < self::UNSCHEDULED;
             $start = $unscheduled ? null : $this->freeSlot($operator->id, $duration, $busy);
@@ -102,8 +103,10 @@ class StileInfinitoSeeder extends Seeder
 
     private function staff(): Collection
     {
-        return collect(['Giulia', 'Martina', 'Sara', 'Elena'])
-            ->map(fn (string $name): Staff => Staff::firstOrCreate(['name' => $name]));
+        // I colori vanno scritti qui: durante il seed gli eventi dei model sono spenti.
+        return collect(['Giulia' => '#2563eb', 'Martina' => '#16a34a', 'Sara' => '#f59e0b', 'Elena' => '#db2777'])
+            ->map(fn (string $color, string $name): Staff => Staff::updateOrCreate(['name' => $name], ['color' => $color]))
+            ->values();
     }
 
     private function services(): Collection
@@ -154,6 +157,26 @@ class StileInfinitoSeeder extends Seeder
                     : $service->price],
             ])->all()
         );
+    }
+
+    /** Ogni servizio lo eseguono due o tre operatrici; uno resta senza collegamenti (lo possono fare tutte). */
+    private function linkStaffToServices(Collection $services, Collection $staff): void
+    {
+        foreach ($services->values() as $index => $service) {
+            $service->staff()->sync(
+                $index === 0 ? [] : $staff->random(random_int(2, min(3, $staff->count())))->pluck('id')->all()
+            );
+        }
+    }
+
+    /** L'operatrice di un appuntamento: una di quelle che eseguono tutti i servizi scelti (altrimenti una qualsiasi). */
+    private function operatorFor(Collection $chosen, Collection $staff): Staff
+    {
+        $eligible = $staff->filter(fn (Staff $member): bool => $chosen->every(
+            fn (Service $service): bool => $service->staff->isEmpty() || $service->staff->contains('id', $member->id)
+        ));
+
+        return ($eligible->isNotEmpty() ? $eligible : $staff)->random();
     }
 
     private function clients(): Collection

@@ -131,6 +131,7 @@ class StatsController extends Controller
             return [
                 'staff_id' => $staff->id,
                 'name' => $staff->name,
+                'color' => $staff->color,
                 'appointments' => $items->count(),
                 'minutes' => $minutes,
                 'hours' => round($minutes / 60, 1),

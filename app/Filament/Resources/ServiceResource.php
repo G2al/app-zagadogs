@@ -40,9 +40,12 @@ class ServiceResource extends Resource
                     ->maxValue(99999.99)
                     ->prefix('€')
                     ->helperText('Il prezzo si può cambiare su ogni singolo appuntamento.'),
-                Forms\Components\ColorPicker::make('color')
-                    ->label('Colore')
-                    ->default('#16a34a'),
+                Forms\Components\Select::make('staff')
+                    ->label('Operatrici')
+                    ->relationship('staff', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->helperText('Chi esegue questo servizio. Se non ne scegli nessuna, lo possono fare tutte.'),
             ]);
     }
 
@@ -63,8 +66,10 @@ class ServiceResource extends Resource
                     ->money('EUR')
                     ->placeholder('-')
                     ->sortable(),
-                Tables\Columns\ColorColumn::make('color')
-                    ->label('Colore'),
+                Tables\Columns\TextColumn::make('staff.name')
+                    ->label('Operatrici')
+                    ->badge()
+                    ->placeholder('Tutte'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creato il')

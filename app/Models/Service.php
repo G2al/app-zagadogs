@@ -26,6 +26,12 @@ class Service extends Model
         return $this->belongsTo(ServiceCategory::class, 'category_id');
     }
 
+    /** Operatrici che eseguono questo servizio. Nessuna collegata = lo possono fare tutte. */
+    public function staff()
+    {
+        return $this->belongsToMany(Staff::class, 'service_staff');
+    }
+
     public function appointments()
     {
         return $this->belongsToMany(Appointment::class)

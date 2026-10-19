@@ -27,6 +27,12 @@ class StaffResource extends Resource
                     ->label('Nome')
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\ColorPicker::make('color')
+                    ->label('Colore')
+                    ->helperText('È il colore dei suoi appuntamenti nel calendario.')
+                    ->default(fn (): string => \App\Models\Staff::nextColor())
+                    ->required(),
             ]);
     }
 
@@ -38,6 +44,9 @@ class StaffResource extends Resource
                     ->label('Nome')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\ColorColumn::make('color')
+                    ->label('Colore'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creato il')

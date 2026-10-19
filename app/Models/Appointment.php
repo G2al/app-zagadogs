@@ -62,6 +62,26 @@ class Appointment extends Model
         return max(0, (int) $this->duration_minutes);
     }
 
+    public const DEFAULT_COLOR = '#16a34a';
+
+    /**
+     * Colore con cui l'appuntamento appare nel calendario: quello dell'operatrice.
+     * Se l'operatrice non ne ha uno vale quello del primo servizio, poi un verde predefinito.
+     * Usa solo le relazioni già caricate, per non fare una query per ogni appuntamento.
+     */
+    public function displayColor(): string
+    {
+        $staffColor = $this->relationLoaded('staff') ? $this->staff?->color : null;
+
+        if (filled($staffColor)) {
+            return $staffColor;
+        }
+
+        $serviceColor = $this->relationLoaded('services') ? $this->services->pluck('color')->filter()->first() : null;
+
+        return $serviceColor ?: self::DEFAULT_COLOR;
+    }
+
     /** Totale in euro: somma dei prezzi applicati ai servizi (quelli senza prezzo contano zero). */
     public function totalPrice(): float
     {

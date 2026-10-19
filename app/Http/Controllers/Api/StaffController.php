@@ -11,15 +11,19 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class StaffController extends Controller
 {
+    private const COLOR_RULE = 'regex:/^#[0-9a-fA-F]{6}$/';
+
     public function index(): AnonymousResourceCollection
     {
         return StaffResource::collection(Staff::orderBy('name')->get());
     }
 
+    /** Senza `color` l'operatrice riceve in automatico il primo colore della tavolozza non ancora usato. */
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'color' => ['nullable', 'string', self::COLOR_RULE],
         ]);
 
         return (new StaffResource(Staff::create($data)))
@@ -35,7 +39,8 @@ class StaffController extends Controller
     public function update(Request $request, Staff $staff): StaffResource
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'color' => ['sometimes', 'required', 'string', self::COLOR_RULE],
         ]);
 
         $staff->update($data);

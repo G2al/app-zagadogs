@@ -12,6 +12,8 @@ class StaffResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            // Colore dell'operatrice (#rrggbb): è quello dei suoi appuntamenti nel calendario.
+            'color' => $this->color,
         ];
     }
 }

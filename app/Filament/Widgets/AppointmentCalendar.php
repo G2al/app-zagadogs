@@ -258,19 +258,14 @@ class AppointmentCalendar extends FullCalendarWidget
                     $clientName = 'Appuntamento';
                 }
 
-                $serviceColors = $appointment->services
-                    ->pluck('color')
-                    ->map(fn (?string $color) => trim((string) $color))
-                    ->filter()
-                    ->values();
-
                 $serviceNames = $appointment->services
                     ->pluck('name')
                     ->map(fn (?string $name) => $this->abbreviateServiceName((string) ($name ?? '')))
                     ->filter()
                     ->values();
 
-                $serviceColor = $serviceColors->first();
+                // Colore dell'operatrice (con ripiego sul servizio e poi su un verde predefinito).
+                $color = $appointment->displayColor();
                 $serviceLabel = $serviceNames->implode(' + ');
                 $staffName = trim((string) ($appointment->staff?->name ?? ''));
 
@@ -284,8 +279,8 @@ class AppointmentCalendar extends FullCalendarWidget
                     // Senza durata il blocco avrebbe altezza zero: nel calendario se ne disegna uno minimo (solo grafica).
                     'end' => $appointment->scheduled_at->copy()->addMinutes(max($appointment->durationMinutes(), Appointment::MIN_CALENDAR_BLOCK_MINUTES))->toIso8601String(),
                     'displayTime' => $appointment->scheduled_at->format('H:i'),
-                    'backgroundColor' => $serviceColor ?: '#16a34a',
-                    'borderColor' => $serviceColor ?: '#16a34a',
+                    'backgroundColor' => $color,
+                    'borderColor' => $color,
                     'serviceLabel' => $serviceLabel,
                     'staffName' => $staffName,
                     'stackIndex' => $stackIndex,
