@@ -28,6 +28,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // WAHA (WhatsApp HTTP API). Senza queste chiavi l'invio automatico resta spento e l'app funziona come sempre.
+    'waha' => [
+        'url' => env('WAHA_URL'),
+        'api_key' => env('WAHA_API_KEY'),
+        'session' => env('WAHA_SESSION') ?: 'default',
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

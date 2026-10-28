@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Appointment;
+use App\Services\WahaService;
 use App\Services\WhatsAppService;
 use Filament\Forms;
 use Filament\Tables;
@@ -85,27 +86,30 @@ class AppointmentsToSchedule extends TableWidget
                             ->seconds(false)
                             ->required(),
 
+                        // Solo senza WAHA: con WAHA configurato la conferma parte da sola e non serve aprire WhatsApp.
                         Forms\Components\Checkbox::make('send_whatsapp')
                             ->label('Invia conferma WhatsApp')
                             ->accepted()
-                            ->required(),
+                            ->required()
+                            ->visible(fn (): bool => ! app(WahaService::class)->isConfigured()),
                     ])
-                    ->action(function (array $data, Appointment $record, WhatsAppService $whatsAppService, $livewire): void {
+                    ->action(function (array $data, Appointment $record, WhatsAppService $whatsAppService, WahaService $waha, $livewire): void {
+                        $automatic = $waha->isConfigured();
 
+                        // Lo stato diventa "confirmed": con WAHA la conferma e il promemoria partono da soli (AppointmentObserver).
                         $record->update([
                             'scheduled_at' => $data['scheduled_at'],
                             'status' => 'confirmed',
-                            'whatsapp_sent' => true,
-                        ]);
-
-                        $record->refresh()->loadMissing(['client', 'dog']);
-
-                        $url = $whatsAppService->sendAppointmentConfirmation($record);
+                        ] + ($automatic ? [] : ['whatsapp_sent' => true]));
 
                         $livewire->dispatch('filament-fullcalendar--refresh');
                         $livewire->dispatch('appointments-to-schedule--refresh');
 
-                        $livewire->js('window.location.href = ' . json_encode($url));
+                        if (! $automatic) {
+                            $record->refresh()->loadMissing(['client', 'dog']);
+
+                            $livewire->js('window.location.href = ' . json_encode($whatsAppService->sendAppointmentConfirmation($record)));
+                        }
                     }),
             ])
             ->emptyStateHeading('Nessun appuntamento da programmare');

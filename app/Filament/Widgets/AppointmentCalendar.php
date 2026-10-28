@@ -207,6 +207,11 @@ class AppointmentCalendar extends FullCalendarWidget
                     return $data;
                 })
                 ->afterFormFilled(function () use ($action): void {
+                    // Con WAHA configurato la conferma parte da sola: niente pulsante per aprire WhatsApp a mano.
+                    if (app(\App\Services\WahaService::class)->isConfigured()) {
+                        return;
+                    }
+
                     $action->extraModalFooterActions([
                         $action->makeModalSubmitAction('createAndWhatsapp', arguments: ['send_whatsapp' => true])
                             ->label('Invia WhatsApp')

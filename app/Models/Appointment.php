@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\AppointmentObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Service;
 
+#[ObservedBy(AppointmentObserver::class)]
 class Appointment extends Model
 {
     use HasFactory;
@@ -41,6 +44,12 @@ class Appointment extends Model
     public function services()
     {
         return $this->belongsToMany(Service::class)->withTimestamps();
+    }
+
+    /** Messaggi WhatsApp automatici (conferma e promemoria) di questo appuntamento. */
+    public function whatsappMessages()
+    {
+        return $this->hasMany(WhatsAppMessage::class);
     }
 
     /**
