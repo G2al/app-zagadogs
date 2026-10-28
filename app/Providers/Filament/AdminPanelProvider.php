@@ -6,6 +6,7 @@ use App\Filament\Widgets\AppointmentCalendar;
 use App\Filament\Widgets\AppointmentStatsBottom;
 use App\Filament\Widgets\AppointmentStatsTop;
 use App\Filament\Widgets\AppointmentsToSchedule;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -39,7 +40,9 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->darkMode(true, true)
+            // Selettore chiaro/scuro/sistema nativo di Filament. Finché non si sceglie, resta scuro come prima.
+            ->darkMode()
+            ->defaultThemeMode(ThemeMode::Dark)
             
             ->plugins([
                 FilamentFullCalendarPlugin::make()

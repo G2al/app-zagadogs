@@ -1,14 +1,23 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --pwa-topbar-offset: 14px;
 }
 
+:root.dark {
+  color-scheme: dark;
+}
+
 html,
 body {
-  background-color: #111827;
+  background-color: #f9fafb;
   overscroll-behavior: none;
+}
+
+html.dark,
+html.dark body {
+  background-color: #111827;
 }
 
 .fi-body {
@@ -25,7 +34,7 @@ body {
     padding-top: 8px !important;
   }
 
-  .fi-sidebar {
+  .dark .fi-sidebar {
     background-color: #111827;
   }
 
@@ -77,6 +86,10 @@ body {
 /* Safe-area handling for PWA standalone */
 @media (display-mode: standalone) {
   .fi-topbar {
+    background-color: #ffffff;
+  }
+
+  .dark .fi-topbar {
     background-color: #111827;
   }
 
@@ -92,6 +105,10 @@ body {
 }
 
 html.is-pwa-standalone .fi-topbar {
+  background-color: #ffffff;
+}
+
+html.is-pwa-standalone.dark .fi-topbar {
   background-color: #111827;
 }
 

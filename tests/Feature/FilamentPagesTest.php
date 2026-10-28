@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Models\Dog;
 use App\Models\Service;
 use App\Models\User;
+use Filament\Enums\ThemeMode;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -46,6 +48,30 @@ class FilamentPagesTest extends TestCase
         ]));
 
         return $appointment;
+    }
+
+    public function test_il_selettore_chiaro_scuro_di_filament_e_attivo(): void
+    {
+        $panel = Filament::getPanel('admin');
+
+        $this->assertTrue($panel->hasDarkMode());
+        $this->assertFalse($panel->hasDarkModeForced(), 'Il tema non deve essere forzato: altrimenti il selettore sparisce.');
+        $this->assertSame(ThemeMode::Dark, $panel->getDefaultThemeMode());
+
+        $this->login();
+
+        // Il selettore (sole, luna, sistema) sta nel menu dell'avatar, in alto a destra.
+        $this->get('/admin')->assertOk()->assertSee('fi-theme-switcher', false);
+    }
+
+    public function test_gli_sfondi_personalizzati_seguono_il_tema(): void
+    {
+        $css = file_get_contents(public_path('pwa.css'));
+
+        // Il colore scuro fisso vale solo con il tema scuro; il tema chiaro ha il suo sfondo.
+        $this->assertStringContainsString('color-scheme: light;', $css);
+        $this->assertStringContainsString('html.dark body', $css);
+        $this->assertDoesNotMatchRegularExpression('/^html,\s*body\s*\{[^}]*#111827/m', $css);
     }
 
     public function test_le_pagine_si_aprono_senza_waha(): void
